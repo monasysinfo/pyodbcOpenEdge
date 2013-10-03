@@ -1,0 +1,94 @@
+ODBC Progress + Django
+
+Prérequis :
+	-Serveur OE actif
+	-Doit exister un user dans le scheme SQL
+	-Le fichier de licence PGODBC.LIC doit être présent dans le dossier ou s'execute le programme
+	-pyodbc doir être modifié : 
+		Il faut changer le "Connection Attribute for Unicode" (http://media.datadirect.com/download/docs/odbc/allodbc/wwhelp/wwhimpl/js/html/wwhelp.htm#href=reference/rfi1359986396342.html)
+		-        if (SQL_SUCCEEDED(ret))
+		+
+		+        if (SQL_SUCCEEDED(ret)) {
+		+            // TODO: check ODBC driver vendor here
+		+            if (true) { // DataDirect "application wants UCS-2" option:
+		+                Py_BEGIN_ALLOW_THREADS
+		+                ret = SQLSetConnectAttr(hdbc, 1040+21, (SQLPOINTER)1, SQL_IS_INTEGER);
+		+                Py_END_ALLOW_THREADS
+		+                if (!SQL_SUCCEEDED(ret))
+		+                {
+		+                    RaiseErrorFromHandle("SQLSetConnnectAttr(SQL_ATTR_APP_WCHAR_TYPE)", hdbc, SQL_NULL_HANDLE);
+		+                    return 0;
+		+                }
+		+            }
+		+
+		             return true;
+		+        }
+Limitations
+	-les noms des tables et index sont limités 32 Car.
+	-La simulation des auto-increment column est faite avec des sequences.
+	-Lors d'un import des tables progress avec 'manage.py inspectdb', si la table n'a pas de colonne ID, il faut forcer
+		un champ en 'primary_key=True'
+	-South n'est pour l'instant pas compatible
+	
+issues
+	SOLVED:
+		Impossible d'inserer une date dans un champ date sous la forme :
+			INSERT INTO TABLE (CHAMP) VALUES (?),('2013-09-09')
+		Ok avec la syntaxe :
+			mydate=str(datetime.date.today().isoformat()).join(["'","'"])
+			INSERT INTO TABLE (CHAMP) VALUES (%s)%(mydate)
+		
+		--> Ok par derivation de la methode value_to_db_date de l'objet BaseDatabaseOperations
+	
+	SOLVED:
+		Lors de la lecture d'un champ de type DECIMAL dans une table L4G, il y a une erreur "decimal.InvalidOperation: Invalid literal for Decimal: u''"
+		
+		--> OK avec le patch décrit ici : https://bitbucket.org/dholth/progress_sa/src, fichier : pyodbc-ucs2.patch mais SANS '-fshort-wchar'
+			Il faut changer le "Connection Attribute for Unicode" (http://media.datadirect.com/download/docs/odbc/allodbc/wwhelp/wwhimpl/js/html/wwhelp.htm#href=reference/rfi1359986396342.html)
+			Cet attribut est positionné avec a commande SQLSetConnectAttr le l'api odbc, la valeur de l'attribut est SQL_ATTR_APP_WCHAR_TYPE (valeur 1061)
+	
+	SOLVED:
+		Lors de la modification d'un enregistrement, message (la modifcation est tout de même effective):
+			'ascii' codec can't encode character u'\xe9' in position 6: ordinal not in range(128)
+			/home/jyp/pythonsrc/OpenEdgeTest/OpenEdge/pyodbc/compiler.py in as_sql ligne 272
+			La modification est correcte avec pyodbc direct.
+			
+		--> OK avec smart_str() en place de str() avec "from django.utils.encoding import smart_str, smart_unicode"
+			voir compiler.py
+		
+	   	
+
+Type Django OK :
+	BigIntegerField = models.BigIntegerField(null=True)    
+    CharField = models.CharField(max_length=50,null=True)    
+    IntegerField = models.IntegerField(null=True)    
+    TextField = models.TextField(null=True)
+    TimeField = models.TimeField(null=True)
+    CommaSeparatedIntegerField = models.CommaSeparatedIntegerField(max_length=50,null=True)
+    EmailField = models.EmailField(max_length=50,null=True)
+    IPAddressField = models.IPAddressField(null=True)
+    GenericIPAddressField = models.GenericIPAddressField(null=True)
+    NullBooleanField = models.NullBooleanField(null=True)
+    SlugField = models.SlugField(null=True)
+    URLField = models.URLField(null=True)
+    FloatField = models.FloatField(null=True)
+    PositiveIntegerField = models.PositiveIntegerField(null=True)
+    DateTimeField = models.DateTimeField(null=True)
+    DecimalField  = models.DecimalField(max_digits=5,decimal_places=2,null=True)
+    DateField = models.DateField(null=True)
+    SmallIntegerField = models.SmallIntegerField(null=True)
+    FileField = models.FileField(upload_to='tmp',null=True)	    
+	ImageField = models.ImageField(upload_to='tmp',null=True)	
+
+Portage South:
+
+	-Ajouter dans settings.py : SOUTH_DATABASE_ADAPTERS = {'default':'south.db.mysql'}
+	-Adapter le module south.db
+		    
+TODO:
+	
+	-Voir comment gérer le fichier de licence PGODBC.LIC
+	-Voir model de psp qui génère l'erreur : TypeError: not enough arguments for format string
+	-Test foreignKey, onetomany, onetoone
+	-Compatibilité SOuth à étudier
+	
