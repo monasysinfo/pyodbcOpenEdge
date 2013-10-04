@@ -2,9 +2,9 @@ ODBC Progress + Django
 
 Prérequis :
 	-Serveur OE actif
-	-Doit exister un user dans le scheme SQL
+	-Doit exister un user dans le schema SQL
 	-Le fichier de licence PGODBC.LIC doit être présent dans le dossier ou s'execute le programme
-	-pyodbc doir être modifié : 
+	-pyodbc linux doir être modifié: 
 		Il faut changer le "Connection Attribute for Unicode" (http://media.datadirect.com/download/docs/odbc/allodbc/wwhelp/wwhimpl/js/html/wwhelp.htm#href=reference/rfi1359986396342.html)
 		-        if (SQL_SUCCEEDED(ret))
 		+
@@ -55,8 +55,18 @@ issues
 			
 		--> OK avec smart_str() en place de str() avec "from django.utils.encoding import smart_str, smart_unicode"
 			voir compiler.py
+	
+	SOLVED:
+		erreur : TypeError: not enough arguments for format string
 		
-	   	
+		--> OK Dans formatTableName de SQLCompiler, ne pas tronquer le reste de la ligne à 32 Car. si on
+			détecte une clause IN dans la requete SQL.
+	
+	SOLVED:
+		Les permissions (auth_permission) ne sont pas toutes créées.
+		
+		--> OK 	En autorisant les bul_insert (base.py:DatabaseFeatures has_bulk_insert = True 
+				Dans compiler.py:SQLInsert-execute_sql on test si on est en mode bulk, si oui, on invoque cursor.executemany(), 
 
 Type Django OK :
 	BigIntegerField = models.BigIntegerField(null=True)    
@@ -88,7 +98,6 @@ Portage South:
 TODO:
 	
 	-Voir comment gérer le fichier de licence PGODBC.LIC
-	-Voir model de psp qui génère l'erreur : TypeError: not enough arguments for format string
-	-Test foreignKey, onetomany, onetoone
+	-Tests de validation django à passer
 	-Compatibilité SOuth à étudier
 	

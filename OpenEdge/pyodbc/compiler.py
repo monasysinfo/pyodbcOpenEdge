@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from django.db.models.sql import compiler
 from itertools import izip
 from django.db.utils import DatabaseError
@@ -312,7 +314,8 @@ class SQLInsertCompiler(SQLCompiler):
             else:    
                 result.append(self.connection.ops.bulk_insert_sql(fields, len(values)))
             
-            return [(" ".join(result),[v for val in values for v in val])]
+            #return [(" ".join(result),[v for val in values for v in val])]
+            return [(" ".join(result),values)]
         else:
             self.bulk_load=False    
             result.append("VALUES (%s" % ", ".join(placeholders[0]))
@@ -336,15 +339,8 @@ class SQLInsertCompiler(SQLCompiler):
         if self.bulk_load is not True:
             for sql, params in sql_param:                            
                 cursor.execute(sql, params)
-        else:
-            #import pdb; pdb.set_trace()
-            sql = sql_param[0][0]
-            params = sql_param[0][1]
-            bulk_number=len(sql.split('%s'))-1            
-            for n in range(1,len(params),bulk_number):
-                bulk_params=[
-                            i for i in params[n-1:n-1+bulk_number]]
-                cursor.execute(sql,tuple(bulk_params))
+        else:      
+            cursor.executemany(sql_param[0][0],sql_param[0][1])
         
         if not (return_id and cursor):
             return

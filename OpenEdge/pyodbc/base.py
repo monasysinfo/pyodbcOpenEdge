@@ -389,6 +389,7 @@ class CursorWrapper(object):
         else:
             raw_pll = params_list
             params_list = [self.format_params(p) for p in raw_pll]
+                    
         return self.cursor.executemany(sql, params_list)
 
     def format_results(self, rows):
