@@ -1,0 +1,6 @@
+#!/bin/bash
+
+SCRIPT_DIR=$(/usr/bin/dirname $0)
+export PYTHONPATH=${PYTHONPATH}:${SCRIPT_DIR}/..
+DIRS=$(/usr/bin/find ${SCRIPT_DIR} -maxdepth 1 -mindepth 1 -type d -name "[^.]*"| sed "s/\.\///")
+python ${SCRIPT_DIR}/manage.py test $* ${DIRS}
