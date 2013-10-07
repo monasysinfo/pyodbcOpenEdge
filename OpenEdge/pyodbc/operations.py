@@ -6,6 +6,11 @@ Created on 16 mai 2013
 
 '''
 
+from constants import MAX_CONSTRAINT_NAME    
+from constants import MAX_INDEX_NAME
+from constants import MAX_TABLE_NAME
+from constants import MAX_SEQNAME
+
 from django.db.backends import BaseDatabaseOperations
 from OpenEdge.pyodbc import query
 import datetime
@@ -117,45 +122,63 @@ class DatabaseOperations(BaseDatabaseOperations):
         The `style` argument is a Style object as returned by either
         color_style() or no_style() in django.core.management.color.
         """
+        
         if tables:
-            # Cannot use TRUNCATE on tables that are referenced by a FOREIGN KEY
-            # So must use the much slower DELETE
-            from django.db import connection
-            cursor = connection.cursor()
-            # Try to minimize the risks of the braindeaded inconsistency in
-            # DBCC CHEKIDENT(table, RESEED, n) behavior.
-            seqs = []
-            for seq in sequences:
-                cursor.execute("SELECT COUNT(*) FROM %s" % self.quote_name(seq["table"]))
-                rowcnt = cursor.fetchone()[0]
-                elem = {}
-                if rowcnt:
-                    elem['start_id'] = 0
-                else:
-                    elem['start_id'] = 1
-                elem.update(seq)
-                seqs.append(elem)
-            cursor.execute("SELECT TABLE_NAME, CONSTRAINT_NAME FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_TYPE not in ('PRIMARY KEY','UNIQUE')")
-            fks = cursor.fetchall()
-            sql_list = ['ALTER TABLE %s NOCHECK CONSTRAINT %s;' % \
-                    (self.quote_name(fk[0]), self.quote_name(fk[1])) for fk in fks]
-            sql_list.extend(['%s %s %s;' % (style.SQL_KEYWORD('DELETE'), style.SQL_KEYWORD('FROM'),
-                             style.SQL_FIELD(self.quote_name(table)) ) for table in tables])
-            # Then reset the counters on each table.
-            sql_list.extend(['%s %s (%s, %s, %s) %s %s;' % (
-                style.SQL_KEYWORD('DBCC'),
-                style.SQL_KEYWORD('CHECKIDENT'),
-                style.SQL_FIELD(self.quote_name(seq["table"])),
-                style.SQL_KEYWORD('RESEED'),
-                style.SQL_FIELD('%d' % seq['start_id']),
-                style.SQL_KEYWORD('WITH'),
-                style.SQL_KEYWORD('NO_INFOMSGS'),
-                ) for seq in seqs])
-            sql_list.extend(['ALTER TABLE %s CHECK CONSTRAINT %s;' % \
-                    (self.quote_name(fk[0]), self.quote_name(fk[1])) for fk in fks])
-            return sql_list
+            # Oracle does support TRUNCATE, but it seems to get us into
+            # FK referential trouble, whereas DELETE FROM table works.
+            sql = ['%s %s %s;' % \
+                    (style.SQL_KEYWORD('DELETE'),
+                     style.SQL_KEYWORD('FROM'),
+                     style.SQL_FIELD(self.quote_name(table[:MAX_TABLE_NAME])))
+                    for table in tables]
+            # Since we've just deleted all the rows, running our sequence
+            # ALTER code will reset the sequence to 0.
+            sql.extend(self.sequence_reset_by_name_sql(style, sequences))
+            return sql
         else:
             return []
+        
+        #=======================================================================
+        # if tables:
+        #     # Cannot use TRUNCATE on tables that are referenced by a FOREIGN KEY
+        #     # So must use the much slower DELETE
+        #     from django.db import connection
+        #     cursor = connection.cursor()
+        #     # Try to minimize the risks of the braindeaded inconsistency in
+        #     # DBCC CHEKIDENT(table, RESEED, n) behavior.
+        #     seqs = []
+        #     for seq in sequences:
+        #         cursor.execute("SELECT COUNT(*) FROM %s" % self.quote_name(seq["table"][:MAX_TABLE_NAME]))
+        #         rowcnt = cursor.fetchone()[0]
+        #         elem = {}
+        #         if rowcnt:
+        #             elem['start_id'] = 0
+        #         else:
+        #             elem['start_id'] = 1
+        #         elem.update(seq)
+        #         seqs.append(elem)
+        #     cursor.execute("SELECT TABLE_NAME, CONSTRAINT_NAME FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_TYPE not in ('PRIMARY KEY','UNIQUE')")
+        #     fks = cursor.fetchall()
+        #     sql_list = ['ALTER TABLE %s NOCHECK CONSTRAINT %s;' % \
+        #             (self.quote_name(fk[0]), self.quote_name(fk[1])) for fk in fks]
+        #     sql_list.extend(['%s %s %s;' % (style.SQL_KEYWORD('DELETE'), style.SQL_KEYWORD('FROM'),
+        #                      style.SQL_FIELD(self.quote_name(table)) ) for table in tables])
+        #     # Then reset the counters on each table.
+        #     sql_list.extend(['%s %s (%s, %s, %s) %s %s;' % (
+        #         style.SQL_KEYWORD('DBCC'),
+        #         style.SQL_KEYWORD('CHECKIDENT'),
+        #         style.SQL_FIELD(self.quote_name(seq["table"])),
+        #         style.SQL_KEYWORD('RESEED'),
+        #         style.SQL_FIELD('%d' % seq['start_id']),
+        #         style.SQL_KEYWORD('WITH'),
+        #         style.SQL_KEYWORD('NO_INFOMSGS'),
+        #         ) for seq in seqs])
+        #     sql_list.extend(['ALTER TABLE %s CHECK CONSTRAINT %s;' % \
+        #             (self.quote_name(fk[0]), self.quote_name(fk[1])) for fk in fks])
+        #     return sql_list
+        # else:
+        #     return []
+        #=======================================================================
 
     def start_transaction_sql(self):
         """

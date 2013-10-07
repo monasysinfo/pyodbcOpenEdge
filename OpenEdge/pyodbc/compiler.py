@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 
+from constants import MAX_CONSTRAINT_NAME    
+from constants import MAX_INDEX_NAME
+from constants import MAX_TABLE_NAME
+from constants import MAX_SEQNAME
+
 from django.db.models.sql import compiler
 from itertools import izip
 from django.db.utils import DatabaseError
@@ -17,7 +22,7 @@ class SQLCompiler(compiler.SQLCompiler):
             for i,v in enumerate(data):
                 tv=v.split('"')
                 for iv,vv in enumerate(tv):
-                    tv[iv]=vv[:32]
+                    tv[iv]=vv[:MAX_TABLE_NAME]
                 data[i]='"'.join(tv)
             return data
         else :            
@@ -27,7 +32,7 @@ class SQLCompiler(compiler.SQLCompiler):
                 # If where clause is IN (val,val...), be careful to not substring the IN clause
                 #===============================================================
                 if 'IN (' not in v:
-                    tdata[i]=v[:32]
+                    tdata[i]=v[:MAX_TABLE_NAME]
                 else:
                     tdata[i]=v
                     
@@ -222,7 +227,7 @@ class SQLInsertCompiler(SQLCompiler):
         owner = self.connection.owner
         
         table_has_col_id = False
-        curtable=opts.db_table[:32]
+        curtable=opts.db_table[:MAX_TABLE_NAME]
         
         #import pdb; pdb.set_trace()
         if len(cursor.execute("select col from sysprogress.syscolumns where tbl = '%s' and owner = '%s' and col = 'id'"%(curtable,owner)).fetchall()) > 0 :
@@ -283,7 +288,7 @@ class SQLInsertCompiler(SQLCompiler):
         
         if hasIdCol is False and table_has_col_id is True and can_bulk is False:
             #import pdb; pdb.set_trace()
-            cursor.execute('select seq_id_%s.nextval from dual'%opts.db_table[:25])
+            cursor.execute('select id_%s.nextval from dual'%opts.db_table[:MAX_SEQNAME])
             self.ID=cursor.fetchone()[0]   
             params.append(self.ID)
                              
@@ -308,7 +313,7 @@ class SQLInsertCompiler(SQLCompiler):
             tabID=None
             if hasIdCol is False and table_has_col_id is True:
                 for i,v in enumerate(values):
-                    values[i].append(cursor.execute('select seq_id_%s.nextval from dual'%opts.db_table[:25]).fetchone()[0])
+                    values[i].append(cursor.execute('select id_%s.nextval from dual'%opts.db_table[:MAX_SEQNAME]).fetchone()[0])
                     
                 result.append(self.connection.ops.bulk_insert_sql(fields, len(values),OEid=1))
             else:    

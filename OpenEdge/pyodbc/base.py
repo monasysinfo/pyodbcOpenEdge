@@ -20,6 +20,9 @@ if pyodbc_ver < (2, 0, 38, 9999):
 
 from django.db.backends import BaseDatabaseWrapper, BaseDatabaseFeatures, BaseDatabaseValidation
 from django.db.backends.signals import connection_created
+from django.db.transaction import TransactionManagementError
+from django.utils.functional import cached_property
+
 from django.conf import settings
 from django import VERSION as DjangoVersion
 if DjangoVersion[:2] == (1,2) :
@@ -38,12 +41,12 @@ elif DjangoVersion[0] == 1:
 else:
     _DJANGO_VERSION = 9
 
-#===============================================================================
-# Maximum length of table name in OpenEdge
-#===============================================================================
-MAX_TABLE_NAME=32
-MAX_INDEX_NAME=32
-    
+
+from constants import MAX_CONSTRAINT_NAME    
+from constants import MAX_INDEX_NAME
+from constants import MAX_TABLE_NAME
+from constants import MAX_SEQNAME
+
 from OpenEdge.pyodbc.operations import DatabaseOperations
 from OpenEdge.pyodbc.client import DatabaseClient
 from OpenEdge.pyodbc.creation import DatabaseCreation
@@ -77,6 +80,32 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     can_return_id_from_insert = True
     #uses_savepoints = True
     has_bulk_insert = True
+    ## Opendge limit to 32 char long
+    supports_long_model_names = False
+    #transaction_state = False
+    
+    @cached_property
+    def supports_transactions(self):
+        "Confirm support for transactions"
+        try:
+            # Make sure to run inside a managed transaction block,
+            # otherwise autocommit will cause the confimation to
+            # fail.
+            self.connection.enter_transaction_management()
+            self.connection.managed(True)
+            cursor = self.connection.cursor()
+            cursor.execute('CREATE TABLE "ROLLBACK_TEST" (X INT)')
+            self.connection._commit()
+            cursor.execute('INSERT INTO "ROLLBACK_TEST" (X) VALUES (8)')
+            self.connection._rollback()
+            cursor.execute('SELECT COUNT(X) FROM "ROLLBACK_TEST"')
+            count, = cursor.fetchone()
+            cursor.execute('DROP TABLE "ROLLBACK_TEST"')
+            self.connection._commit()
+            self.connection._dirty = False
+        finally:
+            self.connection.leave_transaction_management()
+        return count == 0
 
 class DatabaseWrapper(BaseDatabaseWrapper):
     drv_name = None
@@ -220,6 +249,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
             
             connstr='%s;HOST=%s;DB=%s;UID=%s;PWD=%s;PORT=%s'%(typecnx_str,host_str,db_str,user_str,passwd_str,port_str)
             
+            #import pdb; pdb.set_trace()
             self.connection = Database.connect(connstr)
             connection_created.send(sender=self.__class__)
 
@@ -237,7 +267,49 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         
         return CursorWrapper(cursor, self.driver_needs_utf8, defschema_str)
 
+    ################# 20131007 #############################
+    def leave_transaction_management(self):
+        """
+        Leaves transaction management for a running thread. A dirty flag is carried
+        over to the surrounding block, as a commit will commit all changes, even
+        those from outside. (Commits are on connection level.)
+        """
+        if self.transaction_state:
+            del self.transaction_state[-1]
+        else:
+            raise TransactionManagementError(
+                "This code isn't under transaction management")
+        # We will pass the next status (after leaving the previous state
+        # behind) to subclass hook.
+        self._leave_transaction_management(self.is_managed())        
+        if self._dirty:            
+            self.rollback()
+            raise TransactionManagementError(
+                "Transaction managed block ended with pending COMMIT/ROLLBACK")
+        self._dirty = False
 
+    def set_dirty(self):
+        """
+        Sets a dirty flag for the current thread and code streak. This can be used
+        to decide in a managed block of code to decide whether there are open
+        changes waiting for commit.
+        """
+        #import pdb; pdb.set_trace()
+        if self._dirty is not None:
+            self._dirty = True
+        else:
+            raise TransactionManagementError("This code isn't under transaction "
+                "management")
+            
+    def is_managed(self):
+        """
+        Checks whether the transaction manager is in manual or in auto state.
+        """
+        #import pdb; pdb.set_trace()
+        if self.transaction_state:
+            return self.transaction_state[-1]
+        return settings.TRANSACTIONS_MANAGED
+    
 class CursorWrapper(object):
     """
     A wrapper around the pyodbc's cursor that takes in account a) some pyodbc
@@ -329,18 +401,36 @@ class CursorWrapper(object):
                     if fidx is not None:
                         idxnum=1
                         FieldIdx=fidx.group().split(',')
-                        sqlUniqueIndex='CREATE UNIQUE INDEX %s_%s ON "%s" ('%(OETblName[:MAX_TABLE_NAME-2],str(idxnum),OETblName)
+                        sqlUniqueIndex='CREATE UNIQUE INDEX %s_%s ON "%s" ('%(OETblName[:MAX_INDEX_NAME],str(idxnum),OETblName)
                         for fieldName in FieldIdx:
                             sqlUniqueIndex+='%s ,'%fieldName
                         
                         sqlUniqueIndex='%s)'%sqlUniqueIndex[:-1]
                 
-                idSequence='CREATE SEQUENCE PUB.SEQ_ID_%s START WITH 0, INCREMENT BY 1, MINVALUE 0, NOCYCLE'%OETblName[:MAX_TABLE_NAME-7]
+                idSequence='CREATE SEQUENCE PUB.ID_%s START WITH 0, INCREMENT BY 1, MINVALUE 0, NOCYCLE'%OETblName[:MAX_SEQNAME]
             
                 
             sql='%s%s" %s'%(Statement,OETblName,sql)                
         
-        
+        #=======================================================================
+        # Reduce constraint name to 32 Char.
+        #=======================================================================
+        if re.search('ADD CONSTRAINT ',sql) is not None:
+            constraintName=re.search('ADD CONSTRAINT "(?P<constraintname>\w+)"',sql).group('constraintname')
+            #tableName=re.search('CREATE INDEX "\w+" ON "(?P<tablename>\w+)" ',sql).group('tablename')
+            
+            if len(constraintName) > MAX_CONSTRAINT_NAME:
+                constraintName=constraintName[(len(constraintName)-MAX_CONSTRAINT_NAME)-1:-1]
+            
+            #===================================================================
+            # if len(tableName) > MAX_TABLE_NAME:
+            #     tableName=tableName[:MAX_TABLE_NAME]
+            #===================================================================
+                
+            beginsql=re.sub('ADD CONSTRAINT .*','',sql)
+            trailsql=re.sub('ALTER TABLE .* FOREIGN KEY','',sql)
+            sql='%s ADD CONSTRAINT "%s" FOREIGN KEY %s'%(beginsql,constraintName,trailsql)
+            
         #=======================================================================
         # Reduce index name to 32 Char.
         #=======================================================================
@@ -367,7 +457,13 @@ class CursorWrapper(object):
             sql=re.sub('SELECT','SELECT TOP %s'%hasLimit.group(1),sql)
                
         #import pdb; pdb.set_trace()
-        #print 'OpenEdge Base %s values : %s' % (sql,params)
+        #print 'OpenEdge Base %s  ::: values : %s ::: Sequence : %s ::: Unique Index : %s ' % (sql,params,idSequence,sqlUniqueIndex)
+        try:
+            if sql.index("model_forms_improvedarticlewithparentlink") >= 0 :
+                import pdb; pdb.set_trace()
+        except:
+            pass
+                
         
         
         rcode=self.cursor.execute(sql,params)
@@ -429,3 +525,8 @@ class CursorWrapper(object):
     
     def __iter__(self):
         return iter(self.cursor)
+    
+    ############## 20131007 ################
+    def set_dirty(self):
+        if self.db.is_managed():
+            self.db.set_dirty()
