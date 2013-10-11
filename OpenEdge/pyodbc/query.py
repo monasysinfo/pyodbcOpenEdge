@@ -106,7 +106,7 @@ _classes = {}
 # 
 #             In our case, cater for the fact that SQL Server < 2008 has no
 #             separate Date and Time data types.
-#             TODO: See how we'll handle this for SQL Server >= 2008
+#             
 #             """
 #             if value is None:
 #                 return None

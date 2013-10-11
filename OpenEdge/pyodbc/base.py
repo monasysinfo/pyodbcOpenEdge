@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 OpenEdge backend for Django.
+##TODO: South Adaptation
 """
 
 try:
@@ -56,8 +57,10 @@ import warnings
 
 warnings.filterwarnings('error', 'The DATABASE_ODBC.+ is deprecated', DeprecationWarning, __name__, 0)
 
-#TODO: is usefull to OE ?
-collation = 'Latin1_General_CI_AS'
+
+#===============================================================================
+# collation = 'Latin1_General_CI_AS'
+#===============================================================================
 
 deprecated = (
     ('DATABASE_ODBC_DRIVER', 'driver'),
@@ -115,28 +118,26 @@ class DatabaseWrapper(BaseDatabaseWrapper):
     datefirst = 7
 
     operators = {
-        #TODO: is usefull to OE ?
+        #
         # Since '=' is used not only for string comparision there is no way
         # to make it case (in)sensitive. It will simply fallback to the
         # database collation.
         'exact': '= %s',
         'iexact': "= UPPER(%s)",
-        'contains': "LIKE %s ESCAPE '\\' COLLATE " + collation,
-        'icontains': "LIKE UPPER(%s) ESCAPE '\\' COLLATE "+ collation,
+        'contains': "LIKE %s ESCAPE '\\' ",
+        'icontains': "LIKE UPPER(%s) ESCAPE '\\' ",
         'gt': '> %s',
         'gte': '>= %s',
         'lt': '< %s',
         'lte': '<= %s',
-        'startswith': "LIKE %s ESCAPE '\\' COLLATE " + collation,
-        'endswith': "LIKE %s ESCAPE '\\' COLLATE " + collation,
-        'istartswith': "LIKE UPPER(%s) ESCAPE '\\' COLLATE " + collation,
-        'iendswith': "LIKE UPPER(%s) ESCAPE '\\' COLLATE " + collation,
+        'startswith': "LIKE %s ESCAPE '\\' ",
+        'endswith': "LIKE %s ESCAPE '\\' ",
+        'istartswith': "LIKE UPPER(%s) ESCAPE '\\' ",
+        'iendswith': "LIKE UPPER(%s) ESCAPE '\\' ",
 
-        # TODO: remove, keep native T-SQL LIKE wildcards support
-        # or use a "compatibility layer" and replace '*' with '%'
-        # and '.' with '_'
-        'regex': 'LIKE %s COLLATE ' + collation,
-        'iregex': 'LIKE %s COLLATE ' + collation,
+       
+        'regex': 'LIKE %s ',
+        'iregex': 'LIKE %s ',
 
         # TODO: freetext, full-text contains...
     }
@@ -144,11 +145,13 @@ class DatabaseWrapper(BaseDatabaseWrapper):
     def __init__(self, *args, **kwargs):
         super(DatabaseWrapper, self).__init__(*args, **kwargs)
         
-        #TODO: is usefull to OE ?
-        if 'OPTIONS' in self.settings_dict:
-            self.MARS_Connection = self.settings_dict['OPTIONS'].get('MARS_Connection', False)
-            self.datefirst = self.settings_dict['OPTIONS'].get('datefirst', 7)
-            self.unicode_results = self.settings_dict['OPTIONS'].get('unicode_results', False)
+        #=======================================================================
+        # 
+        # if 'OPTIONS' in self.settings_dict:
+        #     self.MARS_Connection = self.settings_dict['OPTIONS'].get('MARS_Connection', False)
+        #     self.datefirst = self.settings_dict['OPTIONS'].get('datefirst', 7)
+        #     self.unicode_results = self.settings_dict['OPTIONS'].get('unicode_results', False)
+        #=======================================================================
 
         if _DJANGO_VERSION >= 13:
             self.features = DatabaseFeatures(self)
@@ -448,25 +451,50 @@ class CursorWrapper(object):
             trailsql=re.sub('ON "\w+"','',beginsql)
             sql='CREATE INDEX "%s" ON "%s" %s'%(indexName,tableName,trailsql)
          
+        
         #=======================================================================
-        # Change LIMIT to TOP used by opendedge
+        # 
+        # ### Fix bug when run tests
+        # if re.search('DELETE FROM "django_site"',sql) is not None:
+        #     self.cursor.execute('DELETE FROM "django_flatpage_sites"')
+        #     self.cursor.execute('DELETE FROM "django_redirect"')
+        #       
+        # if re.search('DELETE FROM "contenttypes_foowithouturl"',sql) is not None:
+        #     self.cursor.execute('DELETE FROM "contenttypes_foowithurl"')
+        #     self.cursor.execute('DELETE FROM "contenttypes_foowithbrokenabsolu"')
+        #      
+        # elif re.search('DELETE FROM "auth_permission"',sql) is not None:
+        #     self.cursor.execute('DELETE FROM "auth_user_user_permissions"')
+        #     self.cursor.execute('DELETE FROM "auth_custompermissionsuser_user_"')
+        #     self.cursor.execute('DELETE FROM "auth_custompermissionsuser_group"')
+        #     self.cursor.execute('DELETE FROM "auth_group_permissions"')
+        #     self.cursor.execute('DELETE FROM "auth_extensionuser_groups"')
+        #     self.cursor.execute('DELETE FROM "auth_extensionuser_user_permissi"')
+        #     self.cursor.execute('DELETE FROM "auth_extensionuser"')
+        #     self.cursor.execute('DELETE FROM "auth_user_groups"')
+        #     self.cursor.execute('DELETE FROM "auth_group"')
+        #      
+        # elif re.search('DELETE FROM "auth_custompermissionsuser"',sql) is not None:
+        #     self.cursor.execute('DELETE FROM "auth_custompermissionsuser_group"')
         #=======================================================================
-        hasLimit=re.search('LIMIT (\d+)',sql)
-        if hasLimit is not None :
-            sql=re.sub('LIMIT \d+',' ',sql)
-            sql=re.sub('SELECT','SELECT TOP %s'%hasLimit.group(1),sql)
-               
-        #import pdb; pdb.set_trace()
-        #print 'OpenEdge Base %s  ::: values : %s ::: Sequence : %s ::: Unique Index : %s ' % (sql,params,idSequence,sqlUniqueIndex)
-        try:
-            if sql.index("model_forms_improvedarticlewithparentlink") >= 0 :
-                import pdb; pdb.set_trace()
-        except:
-            pass
+         
+        #=======================================================================
+        # try:
+        #     if sql.index("model_forms_improvedarticlewithparentlink") >= 0 :
+        #         import pdb; pdb.set_trace()
+        # except:
+        #     pass
+        #=======================================================================
                 
         
         
-        rcode=self.cursor.execute(sql,params)
+        #import pdb; pdb.set_trace()
+        #print 'OpenEdge Base %s  ::: values : %s ::: Sequence : %s ::: Unique Index : %s ' % (sql,params,idSequence,sqlUniqueIndex)
+        try:
+            rcode=self.cursor.execute(sql,params)
+        except  Exception as e:            
+            print 'OpenEdge Base %s  ::: values : %s ::: Sequence : %s ::: Unique Index : %s ' % (sql,params,idSequence,sqlUniqueIndex)
+            raise Database.DatabaseError(e)
                 
         if idSequence is not None:
             self.cursor.execute(idSequence)

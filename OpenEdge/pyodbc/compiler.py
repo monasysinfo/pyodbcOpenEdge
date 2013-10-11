@@ -29,12 +29,21 @@ class SQLCompiler(compiler.SQLCompiler):
             tdata=data.split('"')
             for i,v in enumerate(tdata):
                 #===============================================================
-                # If where clause is IN (val,val...), be careful to not substring the IN clause
+                # If where clause is IN (val,val...), or LIKE  be careful to not substring the IN clause
                 #===============================================================
-                if 'IN (' not in v:
-                    tdata[i]=v[:MAX_TABLE_NAME]
+                if 'IN (' in v or ' LIKE ' in v:
+                    if 'COLLATE' in v:
+                        tdata[i]=re.sub('COLLATE (\w+) ','',v)
+                    else:
+                        tdata[i]=v
                 else:
-                    tdata[i]=v
+                    tdata[i]=v[:MAX_TABLE_NAME]
+                #===============================================================
+                # if 'IN (' not in v:
+                #     tdata[i]=v[:MAX_TABLE_NAME]
+                # else:
+                #     tdata[i]=v
+                #===============================================================
                     
             return '"'.join(tdata)
     
@@ -121,14 +130,17 @@ class SQLCompiler(compiler.SQLCompiler):
             result.append('ORDER BY %s' % ', '.join(ordering))
 
         if with_limits:
+            #===================================================================
+            # OpenEdge use TOP, not LIMIT
+            #===================================================================
             if self.query.high_mark is not None:
-                result.append('LIMIT %d' % (self.query.high_mark - self.query.low_mark))
+                result[0]+=' TOP %d' % (self.query.high_mark - self.query.low_mark)
             if self.query.low_mark:
                 if self.query.high_mark is None:
                     val = self.connection.ops.no_limit_value()
                     if val:
-                        result.append('LIMIT %d' % val)
-                result.append('OFFSET %d' % self.query.low_mark)
+                        result[0]+=' TOP %d' % val
+                #result.append('OFFSET %d' % self.query.low_mark)
 
         if self.query.select_for_update and self.connection.features.has_select_for_update:
             # If we've been asked for a NOWAIT query but the backend does not support it,
@@ -234,7 +246,7 @@ class SQLInsertCompiler(SQLCompiler):
             table_has_col_id = True
         
         result = ['INSERT INTO %s' % qn(curtable)]
-
+        
         has_fields = bool(self.query.fields)
         fields = self.query.fields if has_fields else [opts.pk]
         
@@ -285,11 +297,11 @@ class SQLInsertCompiler(SQLCompiler):
                     smart_str(v) if isinstance(v, unicode) else v
                     for v in params[0]
                 ]
-        
-        if hasIdCol is False and table_has_col_id is True and can_bulk is False:
+            
+        if hasIdCol is False and table_has_col_id is True and can_bulk is False:             
             #import pdb; pdb.set_trace()
             cursor.execute('select id_%s.nextval from dual'%opts.db_table[:MAX_SEQNAME])
-            self.ID=cursor.fetchone()[0]   
+            self.ID=cursor.fetchone()[0]
             params.append(self.ID)
                              
         if self.return_id and self.connection.features.can_return_id_from_insert:
@@ -360,4 +372,37 @@ class SQLUpdateCompiler(compiler.SQLUpdateCompiler, SQLCompiler):
     pass
 
 class SQLDeleteCompiler(compiler.SQLDeleteCompiler, SQLCompiler):
-    pass
+    
+    #===========================================================================
+    # def _hasConstraints(self,curtable):
+    #     print '>>> Controle ',curtable
+    #     cursor = self.connection.cursor()
+    #     owner = self.connection.owner
+    #     hasConstraints = cursor.execute("select tblname from sysprogress.sys_ref_constrs where reftblname = '%s' and owner = '%s'"%(curtable,owner)).fetchall()
+    #     if len(hasConstraints) > 0:
+    #         print '>>>',hasConstraints
+    #         
+    #===========================================================================
+    def as_sql(self):
+        """
+        Creates the SQL for this query. Returns the SQL string and list of
+        parameters.
+        """
+        assert len(self.query.tables) == 1, \
+                "Can only delete from one table at a time."
+        qn = self.quote_name_unless_alias
+        #=======================================================================
+        # self._hasConstraints(self.query.tables[0])
+        #=======================================================================
+        
+        result = ['DELETE FROM %s' % qn(self.query.tables[0])]
+        where, params = self.query.where.as_sql(qn=qn, connection=self.connection)
+        if where:
+            result.append('WHERE %s' % where)
+        ##DOTO: Delete after test
+        #=======================================================================
+        # print '>>>',result,params
+        # if result[0] == 'DELETE FROM "django_flatpage_sites"' :
+        #     import pdb; pdb.set_trace()
+        #=======================================================================
+        return ' '.join(result), tuple(params)

@@ -113,7 +113,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         #return super(DatabaseOperations, self).last_executed_query(cursor, cursor.last_sql, params)
 
     def sql_flush(self, style, tables, sequences):
-        #TODO: Openedge adaptation
+        #TODO: Openedge adaptation, see what is possible to do with constraints
         """
         Returns a list of SQL statements required to remove all data from
         the given database tables (without actually removing the tables

@@ -23,6 +23,8 @@ Prérequis :
 		+
 		             return true;
 		+        }
+	-Dans settings.py, USE_TZ doir être positionnée à False (valeur par défaut)
+	 
 Limitations
 	-les noms des tables et index sont limités 32 Car.
 	-La simulation des auto-increment column est faite avec des sequences.
