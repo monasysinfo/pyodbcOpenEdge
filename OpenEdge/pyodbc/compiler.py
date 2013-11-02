@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 
-from constants import MAX_CONSTRAINT_NAME    
-from constants import MAX_INDEX_NAME
-from constants import MAX_TABLE_NAME
-from constants import MAX_SEQNAME
+#===============================================================================
+# from constants import MAX_CONSTRAINT_NAME    
+# from constants import MAX_INDEX_NAME
+# from constants import MAX_TABLE_NAME
+# from constants import MAX_SEQNAME
+#===============================================================================
 
 from django.db.models.sql import compiler
 from itertools import izip
@@ -22,7 +24,7 @@ class SQLCompiler(compiler.SQLCompiler):
             for i,v in enumerate(data):
                 tv=v.split('"')
                 for iv,vv in enumerate(tv):
-                    tv[iv]=vv[:MAX_TABLE_NAME]
+                    tv[iv]=vv[:self.connection.ops.max_name_length()]
                 data[i]='"'.join(tv)
             return data
         else :            
@@ -37,7 +39,7 @@ class SQLCompiler(compiler.SQLCompiler):
                     else:
                         tdata[i]=v
                 else:
-                    tdata[i]=v[:MAX_TABLE_NAME]
+                    tdata[i]=v[:self.connection.ops.max_name_length()]
                 #===============================================================
                 # if 'IN (' not in v:
                 #     tdata[i]=v[:MAX_TABLE_NAME]
@@ -239,11 +241,18 @@ class SQLInsertCompiler(SQLCompiler):
         owner = self.connection.owner
         
         table_has_col_id = False
-        curtable=opts.db_table[:MAX_TABLE_NAME]
+        curtable=opts.db_table[:self.connection.ops.max_name_length()]
         
         #import pdb; pdb.set_trace()
-        if len(cursor.execute("select col from sysprogress.syscolumns where tbl = '%s' and owner = '%s' and col = 'id'"%(curtable,owner)).fetchall()) > 0 :
-            table_has_col_id = True
+        #=======================================================================
+        # Check if table has id col, it's used to emulate autoincrement col
+        #=======================================================================
+        table_has_col_id = self.connection.ops.has_id_col(curtable,cursor,owner)
+        
+        #======================20131102=================================================
+        # if len(cursor.execute("select col from sysprogress.syscolumns where tbl = '%s' and owner = '%s' and col = 'id'"%(curtable,owner)).fetchall()) > 0 :
+        #     table_has_col_id = True
+        #=======================================================================
         
         result = ['INSERT INTO %s' % qn(curtable)]
         
@@ -297,11 +306,14 @@ class SQLInsertCompiler(SQLCompiler):
                     smart_str(v) if isinstance(v, unicode) else v
                     for v in params[0]
                 ]
-            
+        
         if hasIdCol is False and table_has_col_id is True and can_bulk is False:             
             #import pdb; pdb.set_trace()
-            cursor.execute('select id_%s.nextval from dual'%opts.db_table[:MAX_SEQNAME])
-            self.ID=cursor.fetchone()[0]
+            self.ID=self.connection.ops.get_autoinc_keyval(opts.db_table, 'id',self.connection.ops.max_name_length(),cursor)
+            #===========================20131101========================================
+            # cursor.execute('select id_%s.nextval from dual'%opts.db_table[:self.connection.ops.max_name_length()-3])
+            # self.ID=cursor.fetchone()[0]
+            #===================================================================
             params.append(self.ID)
                              
         if self.return_id and self.connection.features.can_return_id_from_insert:
@@ -322,10 +334,13 @@ class SQLInsertCompiler(SQLCompiler):
         if can_bulk:
             #import pdb; pdb.set_trace()
             self.bulk_load=True
-            tabID=None
+            tabID=None            
             if hasIdCol is False and table_has_col_id is True:
                 for i,v in enumerate(values):
-                    values[i].append(cursor.execute('select id_%s.nextval from dual'%opts.db_table[:MAX_SEQNAME]).fetchone()[0])
+                    values[i].append(self.connection.ops.get_autoinc_keyval(opts.db_table, 'id',self.connection.ops.max_name_length(),cursor))
+                    #======================20131101=====================================
+                    # values[i].append(cursor.execute('select id_%s.nextval from dual'%opts.db_table[:self.connection.ops.max_name_length()-3]).fetchone()[0])
+                    #===========================================================
                     
                 result.append(self.connection.ops.bulk_insert_sql(fields, len(values),OEid=1))
             else:    

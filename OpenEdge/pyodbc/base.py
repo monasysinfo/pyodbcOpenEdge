@@ -1,8 +1,14 @@
 # -*- coding: utf-8 -*-
-"""
+
+'''
+Created on 1 Septembre 2013
+ 
+@author: jyp
+
 OpenEdge backend for Django.
 ##TODO: South Adaptation
-"""
+
+'''
 
 try:
     import pyodbc as Database
@@ -43,10 +49,12 @@ else:
     _DJANGO_VERSION = 9
 
 
-from constants import MAX_CONSTRAINT_NAME    
-from constants import MAX_INDEX_NAME
-from constants import MAX_TABLE_NAME
-from constants import MAX_SEQNAME
+#===============================================================================
+# from constants import MAX_CONSTRAINT_NAME    
+# from constants import MAX_INDEX_NAME
+# from constants import MAX_TABLE_NAME
+# from constants import MAX_SEQNAME
+#===============================================================================
 
 from OpenEdge.pyodbc.operations import DatabaseOperations
 from OpenEdge.pyodbc.client import DatabaseClient
@@ -81,11 +89,15 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     uses_custom_query_class = True
     can_use_chunked_reads = False
     can_return_id_from_insert = True
+    ###can_return_id_from_insert = False
     #uses_savepoints = True
     has_bulk_insert = True
     ## Opendge limit to 32 char long
     supports_long_model_names = False
     #transaction_state = False
+    ### 20131031
+    supports_sequence_reset = False
+
     
     @cached_property
     def supports_transactions(self):
@@ -158,6 +170,14 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         else:
             self.features = DatabaseFeatures()
         self.ops = DatabaseOperations(self)
+        
+        #=======================================================================
+        # self.MAX_TABLE_NAME=self.ops.max_name_length()
+        # self.MAX_INDEX_NAME=self.MAX_TABLE_NAME - 2
+        # self.MAX_CONSTRAINT_NAME=self.ops.max_name_length()
+        # self.MAX_SEQNAME=self.MAX_TABLE_NAME - 3
+        #=======================================================================
+
         self.client = DatabaseClient(self)
         self.creation = DatabaseCreation(self)
         self.introspection = DatabaseIntrospection(self)
@@ -268,7 +288,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
             cursor.execute('INSERT INTO "%s"."%s" VALUES (1)'%(defschema_str,dual_str))
             self.connection.commit()
         
-        return CursorWrapper(cursor, self.driver_needs_utf8, defschema_str)
+        return CursorWrapper(cursor, self.driver_needs_utf8, defschema_str,self.ops,self.creation)
 
     ################# 20131007 #############################
     def leave_transaction_management(self):
@@ -318,12 +338,20 @@ class CursorWrapper(object):
     A wrapper around the pyodbc's cursor that takes in account a) some pyodbc
     DB-API 2.0 implementation and b) some common ODBC driver particularities.
     """
-    def __init__(self, cursor, driver_needs_utf8,defschema_str):
+    def __init__(self, cursor, driver_needs_utf8,defschema_str,ops,creation):
         self.cursor = cursor
         self.driver_needs_utf8 = driver_needs_utf8
         self.last_sql = ''
         self.last_params = ()
         self.defaultSchema = defschema_str
+        
+        self.MAX_TABLE_NAME=ops.max_name_length()
+        self.MAX_INDEX_NAME=self.MAX_TABLE_NAME - 2
+        self.MAX_CONSTRAINT_NAME=ops.max_name_length()
+        self.MAX_SEQNAME=self.MAX_TABLE_NAME - 3
+        
+        self.creation = creation
+        self.ops = ops
 
     def format_sql(self, sql, n_params=None):
         if self.driver_needs_utf8 and isinstance(sql, unicode):            
@@ -365,7 +393,8 @@ class CursorWrapper(object):
         return tuple(fp)
 
     def execute(self, sql, params=()):
-        #import pdb; pdb.set_trace()                
+        #import pdb; pdb.set_trace()
+        #print '>>> Execute ',sql
         self.last_sql = sql        
         sql = self.format_sql(sql, len(params))
         params = self.format_params(params)
@@ -392,25 +421,36 @@ class CursorWrapper(object):
             motif='%s(?P<TName>\w+)"'%Statement    
             tn=re.search(motif, sql)
             if tn is not None:
-                OETblName=tn.group('TName')[:MAX_TABLE_NAME]
+                OETblName=tn.group('TName')[:self.MAX_TABLE_NAME]                
             
             motif='%s\w+"'%Statement
             sql=re.sub(motif,'', sql)
             if Statement == 'CREATE TABLE "':
                 uniqueKw=re.search('(?P<uniqueClause>UNIQUE *\(.*\))', sql)
                 if uniqueKw is not None:
+                    
+                    fidx=re.search('("\w+"[, ]*)+',uniqueKw.group('uniqueClause'))                    
+                    FieldIdx=fidx.group().split(',')
+                    indexName=self.ops.create_index_name(OETblName, FieldIdx, self.creation,self.MAX_INDEX_NAME,suffix="")                    
+                    cols = ", ".join(FieldIdx)                    
                     sql=re.sub('(?P<uniqueClause>, *UNIQUE *\(".*"\))','', sql)
-                    fidx=re.search('("\w+"[, ]*)+',uniqueKw.group('uniqueClause'))
-                    if fidx is not None:
-                        idxnum=1
-                        FieldIdx=fidx.group().split(',')
-                        sqlUniqueIndex='CREATE UNIQUE INDEX %s_%s ON "%s" ('%(OETblName[:MAX_INDEX_NAME],str(idxnum),OETblName)
-                        for fieldName in FieldIdx:
-                            sqlUniqueIndex+='%s ,'%fieldName
-                        
-                        sqlUniqueIndex='%s)'%sqlUniqueIndex[:-1]
+                    sqlUniqueIndex='CREATE UNIQUE INDEX %s ON "%s" (%s)'%(indexName,OETblName,cols)
+                    
+                    #=====================Old method ======================================
+                    # fidx=re.search('("\w+"[, ]*)+',uniqueKw.group('uniqueClause'))
+                    # if fidx is not None:
+                    #     idxnum=1
+                    #     FieldIdx=fidx.group().split(',')
+                    #     sqlUniqueIndex='CREATE UNIQUE INDEX %s_%s ON "%s" ('%(OETblName[:self.MAX_INDEX_NAME],str(idxnum),OETblName)
+                    #      
+                    #     for fieldName in FieldIdx:
+                    #         sqlUniqueIndex+='%s ,'%fieldName
+                    #      
+                    #     sqlUniqueIndex='%s)'%sqlUniqueIndex[:-1]
+                    #===========================================================
                 
-                idSequence='CREATE SEQUENCE PUB.ID_%s START WITH 0, INCREMENT BY 1, MINVALUE 0, NOCYCLE'%OETblName[:MAX_SEQNAME]
+                #idSequence='CREATE SEQUENCE PUB.ID_%s START WITH 0, INCREMENT BY 1, MINVALUE 0, NOCYCLE'%OETblName[:self.MAX_SEQNAME]
+                
             
                 
             sql='%s%s" %s'%(Statement,OETblName,sql)                
@@ -422,13 +462,8 @@ class CursorWrapper(object):
             constraintName=re.search('ADD CONSTRAINT "(?P<constraintname>\w+)"',sql).group('constraintname')
             #tableName=re.search('CREATE INDEX "\w+" ON "(?P<tablename>\w+)" ',sql).group('tablename')
             
-            if len(constraintName) > MAX_CONSTRAINT_NAME:
-                constraintName=constraintName[(len(constraintName)-MAX_CONSTRAINT_NAME)-1:-1]
-            
-            #===================================================================
-            # if len(tableName) > MAX_TABLE_NAME:
-            #     tableName=tableName[:MAX_TABLE_NAME]
-            #===================================================================
+            if len(constraintName) > self.MAX_CONSTRAINT_NAME:
+                constraintName=constraintName[(len(constraintName)- self.MAX_CONSTRAINT_NAME)-1:-1]
                 
             beginsql=re.sub('ADD CONSTRAINT .*','',sql)
             trailsql=re.sub('ALTER TABLE .* FOREIGN KEY','',sql)
@@ -441,11 +476,11 @@ class CursorWrapper(object):
             indexName=re.search('CREATE INDEX "(?P<indexname>\w+)"',sql).group('indexname')
             tableName=re.search('CREATE INDEX "\w+" ON "(?P<tablename>\w+)" ',sql).group('tablename')
             
-            if len(indexName) > MAX_INDEX_NAME:
-                indexName=indexName[(len(indexName)-MAX_INDEX_NAME)-1:-1]
+            if len(indexName) > self.MAX_INDEX_NAME:
+                indexName=indexName[(len(indexName)-self.MAX_INDEX_NAME)-1:-1]
             
-            if len(tableName) > MAX_TABLE_NAME:
-                tableName=tableName[:MAX_TABLE_NAME]
+            if len(tableName) > self.MAX_TABLE_NAME:
+                tableName=tableName[:self.MAX_TABLE_NAME]
                 
             beginsql=re.sub('CREATE INDEX "\w+"','',sql)
             trailsql=re.sub('ON "\w+"','',beginsql)
@@ -493,11 +528,11 @@ class CursorWrapper(object):
         try:
             rcode=self.cursor.execute(sql,params)
         except  Exception as e:            
-            print 'OpenEdge Base %s  ::: values : %s ::: Sequence : %s ::: Unique Index : %s ' % (sql,params,idSequence,sqlUniqueIndex)
+            #print 'OpenEdge Base %s  ::: values : %s ::: Sequence : %s ::: Unique Index : %s ' % (sql,params,idSequence,sqlUniqueIndex)
+            print 'OpenEdge Base %s  ::: values : %s :::  Unique Index : %s ' % (sql,params,sqlUniqueIndex)
             raise Database.DatabaseError(e)
                 
-        if idSequence is not None:
-            self.cursor.execute(idSequence)
+        
         if sqlUniqueIndex is not None:
             self.cursor.execute(sqlUniqueIndex)
         self.connection.commit()

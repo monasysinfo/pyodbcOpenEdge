@@ -104,14 +104,16 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
             return False
 
 
-    def _is_auto_field(self, cursor, table_name, column_name):
-        """
-        Checks whether column is Identity
-        """
-        
-        cursor.execute("SELECT COLUMNPROPERTY(OBJECT_ID(%s), %s, 'IsIdentity')",
-                         (self.connection.ops.quote_name(table_name), column_name))
-        return cursor.fetchall()[0][0]
+    #===========================================================================
+    # def _is_auto_field(self, cursor, table_name, column_name):
+    #     """
+    #     Checks whether column is Identity
+    #     """
+    #     
+    #     cursor.execute("SELECT COLUMNPROPERTY(OBJECT_ID(%s), %s, 'IsIdentity')",
+    #                      (self.connection.ops.quote_name(table_name), column_name))
+    #     return cursor.fetchall()[0][0]
+    #===========================================================================
 
     def _test_null(self,data):
         if data == 'Y':

@@ -6,10 +6,12 @@ Created on 16 mai 2013
 
 '''
 
-from constants import MAX_CONSTRAINT_NAME    
-from constants import MAX_INDEX_NAME
-from constants import MAX_TABLE_NAME
-from constants import MAX_SEQNAME
+#===============================================================================
+# from constants import MAX_CONSTRAINT_NAME    
+# from constants import MAX_INDEX_NAME
+# from constants import MAX_TABLE_NAME
+# from constants import MAX_SEQNAME
+#===============================================================================
 
 from django.db.backends import BaseDatabaseOperations
 from OpenEdge.pyodbc import query
@@ -24,7 +26,12 @@ class DatabaseOperations(BaseDatabaseOperations):
     def __init__(self, connection):
         super(DatabaseOperations, self).__init__(connection)
         self.connection = connection
-        self._ss_ver = None    
+        self._ss_ver = None
+        self.MAX_TABLE_NAME=self.max_name_length()
+        self.MAX_INDEX_NAME=self.MAX_TABLE_NAME - 2
+        self.MAX_CONSTRAINT_NAME=self.max_name_length()
+        self.MAX_SEQNAME=self.MAX_TABLE_NAME - 3
+        
 
     def date_extract_sql(self, lookup_type, field_name):
         """
@@ -129,7 +136,7 @@ class DatabaseOperations(BaseDatabaseOperations):
             sql = ['%s %s %s;' % \
                     (style.SQL_KEYWORD('DELETE'),
                      style.SQL_KEYWORD('FROM'),
-                     style.SQL_FIELD(self.quote_name(table[:MAX_TABLE_NAME])))
+                     style.SQL_FIELD(self.quote_name(table[:self.MAX_TABLE_NAME])))
                     for table in tables]
             # Since we've just deleted all the rows, running our sequence
             # ALTER code will reset the sequence to 0.
@@ -301,13 +308,11 @@ class DatabaseOperations(BaseDatabaseOperations):
         append to the INSERT query. The returned fragment should
         contain a format string to hold the appropriate column.
         """
-        
+        print '>>> return_insert_id ',tblname
         pass
     
     def bulk_insert_sql(self, fields, num_values,OEid=0):
-        #import pdb; pdb.set_trace()
-        #pass
-        # postgres
+        #import pdb; pdb.set_trace()        
         items_sql= "(%s)" % ", ".join(["%s"] * (len(fields)+OEid))
         return "VALUES %s"%items_sql
         #items_sql = "(%s)" % ", ".join(["%s"] * (len(fields)+OEid))
@@ -327,3 +332,66 @@ class DatabaseOperations(BaseDatabaseOperations):
         # return " ".join(res)
         #=======================================================================
     
+    def max_name_length(self):
+        """
+        Returns the maximum length of table and column names, or None if there
+        is no limit.
+        """
+        return 32
+    
+    def autoinc_sql(self, table, column):
+        """
+        Returns any SQL needed to support auto-incrementing primary keys, or
+        None if no SQL is necessary.
+
+        This SQL is executed when a table is created.
+        """
+        
+        idSequence='CREATE SEQUENCE PUB.%s_%s START WITH 0, INCREMENT BY 1, MINVALUE 0, NOCYCLE'%(column,table[:self.MAX_SEQNAME])        
+        return [idSequence]
+
+    def get_autoinc_keyval(self, table, column,max_len,cursor):
+        """
+        Function used to simulate the auto incremented key.
+        Returns the next value of the sequence associate to the table.
+        
+        """
+        cursor.execute('select id_%s.nextval from dual'%table[:max_len-3])
+        return cursor.fetchone()[0]   
+
+    def has_id_col(self, table, cursor, owner):
+        """
+        Return true if the table have an ID column        
+        """
+        if len(cursor.execute("select col from sysprogress.syscolumns where tbl = '%s' and owner = '%s' and col = 'id'"%(table,owner)).fetchall()) > 0 :
+            return True
+        else:
+            return False
+    
+    
+    
+    def create_index_name(self, table_name, column_names, creation,max_index_name_length,suffix=""):
+        """
+        Generate a unique name for the index
+        """
+
+        # If there is just one column in the index, use a default algorithm from Django
+        
+        if len(column_names) == 1 and not suffix:
+            return self.shorten_name(
+                '%s_%s' % (table_name, creation._digest(column_names[0]))
+            )
+
+        # Else generate the name for the index by South
+        table_name = table_name.replace('"', '').replace('.', '_')
+        index_unique_name = '_%x' % abs(hash((table_name, ','.join(column_names))))
+
+        # If the index name is too long, truncate it
+        index_name = ('%s_%s%s%s' % (table_name, column_names[0], index_unique_name, suffix)).replace('"', '').replace('.', '_')
+                
+        if len(index_name) > max_index_name_length:
+            part = ('_%s%s%s' % (column_names[0], index_unique_name, suffix))
+            index_name = '%s%s' % (table_name[:(max_index_name_length - len(part))], part)
+
+                
+        return index_name.replace('"', '').replace('.', '_')
