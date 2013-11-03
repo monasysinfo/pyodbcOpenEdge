@@ -458,33 +458,37 @@ class CursorWrapper(object):
         #=======================================================================
         # Reduce constraint name to 32 Char.
         #=======================================================================
-        if re.search('ADD CONSTRAINT ',sql) is not None:
-            constraintName=re.search('ADD CONSTRAINT "(?P<constraintname>\w+)"',sql).group('constraintname')
-            #tableName=re.search('CREATE INDEX "\w+" ON "(?P<tablename>\w+)" ',sql).group('tablename')
-            
-            if len(constraintName) > self.MAX_CONSTRAINT_NAME:
-                constraintName=constraintName[(len(constraintName)- self.MAX_CONSTRAINT_NAME)-1:-1]
-                
-            beginsql=re.sub('ADD CONSTRAINT .*','',sql)
-            trailsql=re.sub('ALTER TABLE .* FOREIGN KEY','',sql)
-            sql='%s ADD CONSTRAINT "%s" FOREIGN KEY %s'%(beginsql,constraintName,trailsql)
+        #=======================================================================
+        # if re.search('ADD CONSTRAINT ',sql) is not None:
+        #     constraintName=re.search('ADD CONSTRAINT "(?P<constraintname>\w+)"',sql).group('constraintname')
+        #     #tableName=re.search('CREATE INDEX "\w+" ON "(?P<tablename>\w+)" ',sql).group('tablename')
+        #     
+        #     if len(constraintName) > self.MAX_CONSTRAINT_NAME:
+        #         constraintName=constraintName[(len(constraintName)- self.MAX_CONSTRAINT_NAME)-1:-1]
+        #         
+        #     beginsql=re.sub('ADD CONSTRAINT .*','',sql)
+        #     trailsql=re.sub('ALTER TABLE .* FOREIGN KEY','',sql)
+        #     sql='%s ADD CONSTRAINT "%s" FOREIGN KEY %s'%(beginsql,constraintName,trailsql)
+        #=======================================================================
             
         #=======================================================================
         # Reduce index name to 32 Char.
         #=======================================================================
-        if re.search('CREATE INDEX ',sql) is not None:
-            indexName=re.search('CREATE INDEX "(?P<indexname>\w+)"',sql).group('indexname')
-            tableName=re.search('CREATE INDEX "\w+" ON "(?P<tablename>\w+)" ',sql).group('tablename')
-            
-            if len(indexName) > self.MAX_INDEX_NAME:
-                indexName=indexName[(len(indexName)-self.MAX_INDEX_NAME)-1:-1]
-            
-            if len(tableName) > self.MAX_TABLE_NAME:
-                tableName=tableName[:self.MAX_TABLE_NAME]
-                
-            beginsql=re.sub('CREATE INDEX "\w+"','',sql)
-            trailsql=re.sub('ON "\w+"','',beginsql)
-            sql='CREATE INDEX "%s" ON "%s" %s'%(indexName,tableName,trailsql)
+        #=======================================================================
+        # if re.search('CREATE INDEX ',sql) is not None:
+        #     indexName=re.search('CREATE INDEX "(?P<indexname>\w+)"',sql).group('indexname')
+        #     tableName=re.search('CREATE INDEX "\w+" ON "(?P<tablename>\w+)" ',sql).group('tablename')
+        #     
+        #     if len(indexName) > self.MAX_INDEX_NAME:
+        #         indexName=indexName[(len(indexName)-self.MAX_INDEX_NAME)-1:-1]
+        #     
+        #     if len(tableName) > self.MAX_TABLE_NAME:
+        #         tableName=tableName[:self.MAX_TABLE_NAME]
+        #         
+        #     beginsql=re.sub('CREATE INDEX "\w+"','',sql)
+        #     trailsql=re.sub('ON "\w+"','',beginsql)
+        #     sql='CREATE INDEX "%s" ON "%s" %s'%(indexName,tableName,trailsql)
+        #=======================================================================
          
         
         #=======================================================================
