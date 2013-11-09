@@ -6,7 +6,24 @@ Created on 1 Septembre 2013
 @author: jyp
 
 OpenEdge backend for Django.
-##TODO: South Adaptation
+South Apdaptation done 20131102
+
+Extents handling:
+-----------------
+
+When this backend is used on 4GL Tables, the fields with extents are seen like char fields where
+each extent value is separated from each other with the ";" character.
+If the field contain a ";" char the ";" separator is escaped with the "~" char.
+Example :
+    Field extents value in OpenEdge are : ["AAA;BBB","CCC"], 
+    The driver returns these values : "AAA~;BBB;CCC"
+    If the field extents value in OpenEdge are : ["AAA~;~BBB","CCC"],
+    The driver returns these values : "AAA~~~;~BBB;CCC"
+
+For writing extents, the values must be provided in the same way than the read operation.
+Example:
+    If a table have an extent column defined like this : CHAR "x(8)" EXTENT 4, the value must be
+    provided like this : "AAA;BBB;CCC;DDD".
 
 '''
 

@@ -30,7 +30,9 @@ Limitations
 	-La simulation des auto-increment column est faite avec des sequences.
 	-Lors d'un import des tables progress avec 'manage.py inspectdb', si la table n'a pas de colonne ID, il faut forcer
 		un champ en 'primary_key=True'
-	-South n'est pour l'instant pas compatible
+
+Compatibiité
+	-20131103- South en cours d'intégration	
 	
 issues
 	SOLVED:
@@ -94,12 +96,12 @@ Type Django OK :
 
 Portage South:
 
-	-Ajouter dans settings.py : SOUTH_DATABASE_ADAPTERS = {'default':'south.db.mysql'}
-	-Adapter le module south.db
+	-Ajouter dans settings.py : SOUTH_DATABASE_ADAPTERS = {'default':'OpenEdge.south.OpenEdge'}
+	
 		    
 TODO:
 	
 	-Voir comment gérer le fichier de licence PGODBC.LIC
 	-Tests de validation django à passer
-	-Compatibilité SOuth à étudier
+	
 	
