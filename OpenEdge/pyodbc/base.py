@@ -145,6 +145,9 @@ class DatabaseWrapper(BaseDatabaseWrapper):
     MARS_Connection = False
     unicode_results = False
     datefirst = 7
+    
+    # OpenEdge default internal codepage
+    oecpinternal = 'iso8859-1'
 
     operators = {
         #
@@ -215,6 +218,10 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         db_str, user_str, passwd_str, port_str = None, None, "", None
         dual_str='DUAL'
         
+        # Get OpenEdge internal Db Codepage (default iso8859-1) 
+        if settings_dict.has_key('CPINTERNAL'):
+            self.oecpinternal = settings_dict['CPINTERNAL']
+            
         if settings_dict.has_key('TYPECNX'):
             if settings_dict['TYPECNX'].has_key('DSN'):
                 #===================================================================
@@ -305,7 +312,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
             cursor.execute('INSERT INTO "%s"."%s" VALUES (1)'%(defschema_str,dual_str))
             self.connection.commit()
         
-        return CursorWrapper(cursor, self.driver_needs_utf8, defschema_str,self.ops,self.creation)
+        return CursorWrapper(cursor, self.driver_needs_utf8, self.oecpinternal,defschema_str,self.ops,self.creation)
 
     ################# 20131007 #############################
     def leave_transaction_management(self):
@@ -355,9 +362,10 @@ class CursorWrapper(object):
     A wrapper around the pyodbc's cursor that takes in account a) some pyodbc
     DB-API 2.0 implementation and b) some common ODBC driver particularities.
     """
-    def __init__(self, cursor, driver_needs_utf8,defschema_str,ops,creation):
+    def __init__(self, cursor, driver_needs_utf8,oecpinternal,defschema_str,ops,creation):
         self.cursor = cursor
         self.driver_needs_utf8 = driver_needs_utf8
+        self.oecpinternal = oecpinternal
         self.last_sql = ''
         self.last_params = ()
         self.defaultSchema = defschema_str
@@ -396,8 +404,7 @@ class CursorWrapper(object):
                     fp.append(p)
             elif isinstance(p, str):
                 if self.driver_needs_utf8:
-                    # TODO: use system encoding when calling decode()?
-                    fp.append(p.decode('utf-8').encode('utf-8'))
+                    fp.append(p.decode(self.oecpinternal).encode('utf-8'))
                 else:
                     fp.append(p)
             elif isinstance(p, type(True)):
@@ -542,8 +549,7 @@ class CursorWrapper(object):
         #     pass
         #=======================================================================
                 
-        
-        
+                
         #import pdb; pdb.set_trace()
         #print 'OpenEdge Base %s  ::: values : %s ::: Sequence : %s ::: Unique Index : %s ' % (sql,params,idSequence,sqlUniqueIndex)
         try:
@@ -569,7 +575,8 @@ class CursorWrapper(object):
         else:
             raw_pll = params_list
             params_list = [self.format_params(p) for p in raw_pll]
-                    
+        
+        print '>>>',sql            
         return self.cursor.executemany(sql, params_list)
 
     def format_results(self, rows):
@@ -585,7 +592,7 @@ class CursorWrapper(object):
         fr = []
         for row in rows:
             if isinstance(row, str):
-                fr.append(row.decode('utf-8'))
+                fr.append(row.decode(self.oecpinternal).encode('utf-8').decode('utf-8'))                
             else:
                 fr.append(row)
         return tuple(fr)

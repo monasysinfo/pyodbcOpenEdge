@@ -72,6 +72,10 @@ issues
 		--> OK 	En autorisant les bul_insert (base.py:DatabaseFeatures has_bulk_insert = True 
 				Dans compiler.py:SQLInsert-execute_sql on test si on est en mode bulk, si oui, on invoque cursor.executemany(), 
 
+	La lecture d'un champ de type DATETIME-TZ dans une table L4G au travers du driver SQL provoque une erreur :
+		/home/jyp/dlc102B/bin/_sqlsrv2: free(): invalid next size (fast)
+	Pas de problème dans une table de type SQL.	
+	  
 Type Django OK :
 	BigIntegerField = models.BigIntegerField(null=True)    
     CharField = models.CharField(max_length=50,null=True)    

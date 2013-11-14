@@ -91,9 +91,9 @@ class SQLCompiler(compiler.SQLCompiler):
             distinct_fields=self.formatTableName(distinct_fields)
             result.append(self.connection.ops.distinct_sql(distinct_fields))
         
-        out_cols=self.formatTableName(out_cols)
-        
+        out_cols= self.formatTableName(out_cols)
         result.append(', '.join(out_cols + self.query.ordering_aliases))
+        
 
         result.append('FROM')
         from_ = self.formatTableName(from_)
