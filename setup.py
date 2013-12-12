@@ -21,7 +21,7 @@ The South integration permits to migrate the database schema.
     author='Jean-Yves Priou',
     author_email='monasysinfo@gmail.com',
     platforms="Independent",
-    url='http://www.jypriou.fr/',
+    url='http://monasysinfo.github.io/pyodbcOpenEdge/',
     packages=['OpenEdge','OpenEdge.OEmodels','OpenEdge.pyodbc','OpenEdge.south'],
     license="BSD",
     classifiers=[
