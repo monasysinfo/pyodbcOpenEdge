@@ -26,14 +26,16 @@ The South integration permits to migrate the database schema.
     license="BSD",
     classifiers=[
         'Development Status :: 4 - Beta',
-        'Environment :: Django',
+        'Environment :: Web Environment',
+        'Framework :: Django',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
+        'Natural Language :: English',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Topic :: DataBases :: Backends :: Django :: OpenEdge :: odbc :: pyodbc :: Progress',
+        'Topic :: Database :: Front-Ends',
         'Topic :: Software Development :: Libraries',
         'Topic :: Utilities'
     ],
-    keywords='django openedge progress odbc pyodbc',
+    keywords='django openedge progress odbc pyodbc databases backend',
 )
