@@ -1,0 +1,18 @@
+.. pyodbcOpenEdgeDoc Documentation master file.
+
+##########################################
+Welcome to Monasys's Modules Documentation
+##########################################
+
+.. toctree:: 'Summary'
+   :maxdepth: 4
+   :glob:
+   :titlesonly:  
+   
+   pyodbcOpenEdge/*
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`search`

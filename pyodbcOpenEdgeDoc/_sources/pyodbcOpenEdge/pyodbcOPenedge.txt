@@ -1,0 +1,518 @@
+.. pyodbcOpenEdge Documentation master file.
+
+Documentation pyodbcOpenEdge
+############################
+
+.. toctree:: 
+   :maxdepth: 4
+   
+   
+
+Indexes and tables
+******************
+
+* :ref:`genindex`
+* :ref:`search`
+
+
+
+.. module:: pyodbcOpenEdge
+   :synopsis: Openedge (aka Progress) odbc Django bakend module documentation
+.. moduleauthor:: Jean-Yves Priou <jy.priou@free.fr>
+
+.. index:: pyodbcOpenEdge
+
+
+.. highlight:: pyodbcOpenEdge
+
+OpenEdge (aka Progress) odbc Django bakend module 
+
+.. _pyodbcOE:
+
+pyodbcOpenEdge
+**************
+
+Description
+===========
+
+
+This module allows the use of the OpenEdge (Progress) databases in the Django Framework.
+It provides the ability to create tables from Django models, or to access 
+existing tables (4GL or SQL) in your Django application.
+
+It uses the OpenEdge ODBC connexion through `pyodbc <http://code.google.com/p/pyodbc/>`_
+ 
+The `South <http://south.aeracode.org/>`_ integration permits to migrate the database schema.
+ 
+.. index:: installation
+
+.. _installation:
+
+Installation
+============
+
+
+You can directely use the pip command ::
+   
+   sudo pip install pyodbcOpenEdge
+
+You cas also download the installer from `Pypi <https://pypi.python.org/pypi>`_.
+
+Then from the terminal (linux) or cmd (Win) go in the setup directory, and type ::
+   
+   python setup.py install
+ 
+
+
+.. index:: OpendEdge
+.. _OpendEdge:
+
+OpenEdge database perequisite and configuration
+===============================================
+
+For OpenEdge these are the minimum requirements :
+   * Version 10.2B minimum
+   * An OpenEdge server must running to allow Django to connect.
+   * Optionaly, dedicate an OpenEdge SQL server.
+   * A user with DBA privileges has to be created in the SQL Schema of the OE Database.
+   * The licence file PGODBC.LIC must be copied from $DLC/odbc into the root directory of the Django App.
+   
+The ODBC connexion is done through Pyodbc (:ref:`see here<pyodbcinst>` ) 
+
+.. index:: ODBC Config
+.. _OpendEdgeODBC:
+
+OpenEdge ODBC Configuration
+===========================
+
+In order to use pyodbcOpenEdge, you have to setup an odbc connexion.
+ 
+Linux/Unix systems
+------------------
+
+First, You have to install the unixodbc package.
+
+Once unixodbc is installed, you have to configure the */etc/odbcinst.ini* like that ::
+   
+   [progress]
+   Description      = ODBC for Progress
+   Driver           = /home/dlc102B/odbc/lib/pgoe1023.so
+   Setup            = /home/dlc102B/odbc/lib/pgoe1023.so
+   DriverODBCVer    = 3.50
+   APILevel         = 1
+   ConnectFunctions = YYN
+   CPTimeout        = 60
+   FileUsage        = 0
+   SQLLevel         = 0
+   UsageCount       = 1
+
+*Diver* and *Setup* are the absolute path name of the odbc libraries shipped with OpenEdge. 
+The meaning of the others parameters are discribe `here <http://media.datadirect.com/download/docs/odbc/allodbc/wwhelp/wwhimpl/js/html/wwhelp.htm#href=userguide/rfi1363233689864.html>`_
+
+The */etc/odbc.ini* have to be configured like that ::
+
+   [Django]
+   Driver=progress
+   Servername=localhost
+   Username=django
+   Password=django
+   Database=mydb
+   Port=50000
+
+*Driver* refers to the *[progress]* entry in the */etc/odbcinst.ini*
+*Port* refers to the TCP Port used when the db server is run.
+
+Windows
+-------
+
+You first have to install the OpenEdge ODBC driver ( `see here <http://www.sparxsystems.com/enterprise_architect_user_guide/10/projects_and_teams/setupprogressopenedgeodbc.html>`_)
+
+You have to configure the ODBC connexion (`see here <http://msdn.microsoft.com/en-us/library/ca6axakh(v=vs.80).aspx>`_)
+
+.. index:: pyodbc installation
+.. _pyodbcinst:
+ 
+pyodbc installation
+===================
+
+On linux systems, the `pyodbc <https://github.com/mkleehammer/pyodbc>`_ module have to be modifed in order to work with the OE db. 
+So, you have to download the sources and apply the following modification:  
+ 
+   * The "Connection Attribute for Unicode" have to be modifed (`see here <http://media.datadirect.com/download/docs/odbc/allodbc/wwhelp/wwhimpl/js/html/wwhelp.htm#href=reference/rfi1359986396342.html>`_)::
+      
+         -        if (SQL_SUCCEEDED(ret))
+         +
+         +        if (SQL_SUCCEEDED(ret)) {
+         +            // TODO: check ODBC driver vendor here
+         +            if (true) { // DataDirect "application wants UCS-2" option:
+         +                Py_BEGIN_ALLOW_THREADS
+         +                ret = SQLSetConnectAttr(hdbc, 1040+21, (SQLPOINTER)1, SQL_IS_INTEGER);
+         +                Py_END_ALLOW_THREADS
+         +                if (!SQL_SUCCEEDED(ret))
+         +                {
+         +                    RaiseErrorFromHandle("SQLSetConnnectAttr(SQL_ATTR_APP_WCHAR_TYPE)", hdbc, SQL_NULL_HANDLE);
+         +                    return 0;
+         +                }
+         +            }
+         +
+                      return true;
+         +        }
+      
+Once this modification is done, you have to recompile the pyodbc module.
+
+On Windows systems, no modifications is required.
+
+.. index:: Connexion validation
+.. _validation:
+
+How to validate the connexion with Python
+=========================================
+
+Once OpenEdge, ODBC, pyodbc are configured, you can test the ODBC connexion with this sample program ::
+
+   import pyodbc,
+   import datetime,sys,os
+   
+   def connectOpenedge(driver=None,dsn=None,host=None,db=None,uid=None,pwd=None,port=None):
+       cnxstring=';HOST=%s;DB=%s;UID=%s;PWD=%s;PORT=%s'%(host,db,uid,pwd,port)
+       if driver is not None:
+           cnxstring = 'DRIVER={%s}%s'%(driver,cnxstring)
+       else:
+           cnxstring = 'DSN=%s%s'%(dsn,cnxstring)
+      
+       cnxn = pyodbc.connect(cnxstring)
+       cursor=cnxn.cursor()
+       
+       try:
+           cursor.execute("SET SCHEMA 'PUB'")
+       except Exception as e:
+           raise pyodbc.DatabaseError(e)
+           exc_type, exc_obj, exc_tb = sys.exc_info()
+           fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+           print(exc_type, fname, exc_tb.tb_lineno)
+           raise pyodbc.Error
+       
+       cnxn.commit()
+       
+       r=cursor.execute('SELECT TOP 1 * FROM "mytable" ')
+       
+       print cursor.description    
+       print r.fetchall()
+       
+       return
+ 
+   if __name__ == '__main__':
+      ## DNS connexion
+      connectOpenedge(dsn='django',host='localhost',db='mydb',uid='django',pwd='django',port='50000')
+      
+      ## Driver connexion
+      connectOpenedge(driver='django',host='localhost',db='mydb',uid='django',pwd='django',port='50000')
+      
+This program should display the datatype of the mytable's fields, and the first row of the table.
+
+In order to connect to the OE db with ODBC, the file **$DLC/odbc/PGODBC.LIC** must be copied in the current 
+directory, otherwise, the following error will raised :: 
+   pyodbc.DatabaseError: ('60', '[60] [DataDirect][ODBC 20101 driver]6060 (6060) (SQLExecDirectW)')
+
+        
+.. index:: settings.py
+.. _settings.py:
+ 
+Django settings.py configuration
+================================
+
+Mono database settings
+----------------------
+
+Sample configuration ::
+
+   DBENGINE='OpenEdge.pyodbc' ## Progress
+   DBNAME='mydb'
+   DBUSER='django'
+   DBPASSWORD='password'
+   DBHOST='localhost'
+   DBPORT='50000'    
+   TYPECNX={'DSN':'mydb'}
+   DEFAULTSCHEMA = 'PUB'
+   CPINTERNAL='cp1252'
+   
+   DATABASES = {
+       'default': {
+           'ENGINE': DBENGINE, 
+           'NAME': DBNAME,     
+           'TYPECNX' : TYPECNX,     
+           'DEFAULTSCHEMA' : DEFAULTSCHEMA,    
+           'USER': DBUSER,             
+           'PASSWORD': DBPASSWORD,     
+           'HOST': DBHOST,             
+           'PORT': DBPORT,
+           'CPINTERNAL' : CPINTERNAL,             
+       }
+   }
+   #===============================================================================
+   # South support
+   #===============================================================================
+   SOUTH_DATABASE_ADAPTERS = {'default':'OpenEdge.south.OpenEdge'}
+   
+**TYPECNX** can be DSN or DRIVER. 
+If DNS is used, then both */etc/odbc.ini* and */etc/odbcinst.ini* have to be configured, and
+the value given is the entry in the */etc/odbc.ini* file.
+If *DRIVER* is use, only the */etc/odbcinst.ini* have to be configured, and
+the value given is the entry in the */etc/odbcinst.ini* file.
+
+**On windows, ONLY DRIVER can be used, The driver name is taken from the registry HKEY_LOCAL_MACHINE/SOFTWARE/ODBC/ODBCINST.INI Driver Subkey**
+
+**DEFAULTSCHEMA** is used to perform queries without prefixing the tables name with schema name.
+
+**CPINTERNAL** This is the database codepage used by OpenEdge, default value is iso8859-1. 
+Change this value if you have accentued characters issues.
+ 
+ 
+Muti database settings
+----------------------
+
+In order to use multi database in Django , `see this documentation <https://docs.djangoproject.com/en/1.5/topics/db/multi-db/>`_.
+
+Below, an example of confgiuration with One Postgres Db and One OpenEdge Db.
+The default Db is Postgres ::
+
+   ######### OpenEdge Db Conf ##############
+   DBENGINEOE='OpenEdge.pyodbc' ## Progress
+   DBNAMEOE='thetwo'
+   DBUSEROE='django'
+   DBPASSWORDOE='django'
+   DBHOSTOE='localhost'
+   DBPORTOE='50000'
+   TYPECNX={'DSN':'django'}
+   DEFAULTSCHEMA = 'PUB'
+   CPINTERNAL='cp1252'
+   
+   ######### Postgres Db Conf ##############
+   DBENGINE='django.db.backends.postgresql_psycopg2'
+   DBNAME='theone'
+   DBUSER='smith'
+   DBPASSWORD='smith'
+   DBHOST='localhost'
+   DBPORT=''
+   
+   ######### Db's config #####################
+   DATABASES = {    
+       'default': {
+           'ENGINE': DBENGINE, # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+           'NAME': DBNAME,                      # Or path to database file if using sqlite3.
+           'TYPECNX' : TYPECNX,     
+           'DEFAULTSCHEMA' : DEFAULTSCHEMA,                 #Default OpenEdge Schema   
+           'USER': DBUSER,                      # Not used with sqlite3.
+           'PASSWORD': DBPASSWORD,                  # Not used with sqlite3.
+           'HOST': DBHOST,                      # Set to empty string for localhost. Not used with sqlite3.
+           'PORT': DBPORT,                      # Set to empty string for default. Not used with sqlite3.
+       },
+       'openedge': {
+           'ENGINE': DBENGINEOE, # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+           'NAME': DBNAMEOE,                      # Or path to database file if using sqlite3.
+           'TYPECNX' : TYPECNX,     
+           'DEFAULTSCHEMA' : DEFAULTSCHEMA,                 #Default OpenEdge Schema   
+           'USER': DBUSEROE,                      # Not used with sqlite3.
+           'PASSWORD': DBPASSWORDOE,                  # Not used with sqlite3.
+           'HOST': DBHOSTOE,                      # Set to empty string for localhost. Not used with sqlite3.
+           'PORT': DBPORTOE,                      # Set to empty string for default. Not used with sqlite3.
+           'CPINTERNAL' : CPINTERNAL,             # Internal db codepage 
+       }
+   }
+   
+   #### Db's routing
+   DATABASE_ROUTERS = ['routers.OeRouter']
+
+Sample router configuration ::
+
+   __init__.py
+      from defrouters import OeRouter
+   
+   defrouters.py      
+      class OeRouter(object):
+          """
+          A router to control all database operations on models in the
+          oeapp application.
+          """
+          def db_for_read(self, model, **hints):
+              """
+              Attempts to read oeapp models go to openedge.
+              """
+              if model._meta.app_label == 'oeapp':
+                  return 'openedge'
+              return None
+      
+          def db_for_write(self, model, **hints):
+              """
+              Attempts to write oeapp models go to openedge.
+              """
+              if model._meta.app_label == 'oeapp':
+                  return 'openedge'
+              return None
+        
+Sample OpenEdge model configuration ::
+
+   from django.db import models
+   from OpenEdge.OEmodels.OpenEdgeExtentField import OpenEdgeExtentField
+   
+   class Mytable(models.Model):
+       name = models.CharField(max_length=60, blank=True,primary_key=True)
+       chartab = OpenEdgeExtentField(max_length=8, blank=True,OEextents=5,OEtype='char',verbose_name='fieldext')
+   
+       class Meta:
+           db_table = 'myTable'
+           app_label = 'oeapp'
+
+In the above sample, chartab is a custom field which is able to handle OenEdge fields with extents (:ref:`details here <extents>` ).
+
+The **class Meta** is used to route the queries to the OpenEdge Db through the database router ::
+   db_table contains the name of the table in the OpenEdge Db.
+   app_label is used by the router to deal with the correct Db. 
+
+        
+                
+.. index:: create tables
+.. _create tables:
+
+How to create tables in the OpenEdge database
+=============================================
+
+There is no particularity, tables are automaticaly created by Django from models.
+
+Model example ::
+   
+   class MasterTable(models.Model):
+       name = models.CharField(max_length=60, blank=True)
+       adress = models.DecimalField(null=True, max_digits=7, decimal_places=2, default=0.0)
+
+   class Slave1(models.Model):
+       car = models.CharField(max_length=60, blank=True)
+       master = models.ManyToManyField(MasterTable)   
+       
+   class Slave2(models.Model):
+       boat = models.CharField(max_length=60, blank=True)
+       master = models.ForeignKey(MasterTable)    
+
+
+.. index:: models from opendegde
+.. _models from opendegde:
+
+How to create models from tables stored in OpenEdge database
+============================================================
+
+*This section describes how to generate Django Models from existing tables.*
+
+Use the **manage.py inspectdb** command to get the tables definitions to be generated as Django's models ::
+   
+   python manage.py inspectdb > OEmodels.py
+
+This step has to be done against a settings.py file, which must contains only the OpenEdge database definition.
+
+The OEmodels.py file must be customized to handle only the desired tables and fields, and to configure the fields with extent (:ref:`details here <extents>` ).
+
+The generated file look like this ::
+   
+   class Alltype(models.Model):
+       chartype = models.CharField(max_length=16, blank=True)
+       inttype = models.IntegerField(null=True, blank=True)
+       dectype = models.DecimalField(null=True, max_digits=17, decimal_places=2, blank=True)
+       datetype = models.DateField(null=True, blank=True)
+       logtype = models.BooleanField(null=True, blank=True)
+       blobtype = models.TextField(blank=True) # This field type is a guess.
+       int64type = models.BigIntegerField(null=True, blank=True)
+       rawtype = models.TextField(blank=True) # This field type is a guess.
+       clobtype = models.CharField(max_length=4194304, blank=True)
+       detetimetype = models.DateTimeField(null=True, blank=True)
+       datetimetztype = models.CharField(max_length=32, blank=True)
+       class Meta:
+           db_table = 'alltype
+
+The comment **# This field type is a guess.** means that the original type is not handle by the Django Backend, 
+and that a generic type is used.
+
+**If no column ID with primary unique key property exists in the table, you have to define a column with the primary_key=True property
+in order to be able to query this table in then Django admin app .** (:ref:`see limitations <limitations>` ) ::
+   
+   name = models.CharField(max_length=60, blank=True,primary_key=True)   
+
+   
+.. index:: extents handling
+.. _extents:
+
+How to handle OpenEdge's tables fields with extents
+===================================================
+
+When the ODBC driver reads a table which contains a field with extents, 
+the values are handled like a characters string where each extent is separated by a semi-colon (;).
+
+Even if the field's type is integer or decimal, the values will be returned as a characters string.
+
+To handle this behavior, you can use the custom field **OpenEdgeExtentField** shipped with the pyodbcOpenEdge backend.
+
+To use it, you have to import the module inthe models.py ::
+   
+   from OpenEdge.OEmodels.OpenEdgeExtentField import OpenEdgeExtentField
+
+Then, in your Django model, you can define an extent field as below ::
+   
+   fieldext = OpenEdgeExtentField(max_length=8, blank=True,OEextents=5,OEtype='char',verbose_name='fieldext')
+
+The **OEextents** represents the number of extent for this field in the OpenEdge Db.
+
+The **OEtype** represents the original type in OpenEdge
+
+When the model is used, the field will be rendered as a python list, made of **OEextents** elements.
+
+Each elements will be of a python type as close as posible than the original one.
+
+The following table gives the equivalences OpenEdge - Python 
+
++---------------+-------------------+
+| OpenEdge Type | Python type       |
++===============+===================+
+| char          | str               |
++---------------+-------------------+
+| int           | int               |
++---------------+-------------------+
+| log           | bool              |
++---------------+-------------------+
+| dec           | decimal.Decimal   |
++---------------+-------------------+
+| int64         | long              |
++---------------+-------------------+
+| datetime      | datetime.datetime |
++---------------+-------------------+
+| date          | datetime.date     |
++---------------+-------------------+
+   
+         
+ 
+.. index:: limitations
+.. _limitations:
+
+Limitations
+===========
+
+To be able to use the Django admin app against the OpenEdge tables, the models used must have a primary unique key column.
+
+Django does not support the multicolumns primary key, so, if the primary unique key for an OpenEgde table is of this type,
+you will not be able to handle this tables in the admin app.
+
+If a column contains data which overflow the column width , then, the ODBC Driver will raise an error ::
+   
+   pyodbc.Error: ('60', '[60] [DataDirect][ODBC 20101 driver][20101]Column mycolumn in table PUB.mytable has value exceeding its max length or precision. (-210012) (SQLFetch)')
+
+To control your db, you can use the $DLC/bin/dbtool, menu 1. 
+This will let you know and then fix the columns which overflows. 
+
+ 
+.. index:: issues
+.. _issues:
+
+Known issues
+============
+
+The reading of a field DATETIME-TZ in a 4GL table through the SQL driver causes an error ::
+   
+   /home/smith/dlc102B/bin/_sqlsrv2: free(): invalid next size (fast)
+   

@@ -1,0 +1,560 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Documentation pyodbcOpenEdge &mdash; pyodbcOpenEdgeDoc beta documentation</title>
+    
+    <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     'beta',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="pyodbcOpenEdgeDoc beta documentation" href="../index.html" />
+    <link rel="prev" title="Welcome to Monasys’s Modules Documentation" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="Welcome to Monasys’s Modules Documentation"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">pyodbcOpenEdgeDoc beta documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Documentation pyodbcOpenEdge</a><ul>
+<li><a class="reference internal" href="#indexes-and-tables">Indexes and tables</a></li>
+<li><a class="reference internal" href="#pyodbcopenedge">pyodbcOpenEdge</a><ul>
+<li><a class="reference internal" href="#description">Description</a></li>
+<li><a class="reference internal" href="#installation">Installation</a></li>
+<li><a class="reference internal" href="#openedge-database-perequisite-and-configuration">OpenEdge database perequisite and configuration</a></li>
+<li><a class="reference internal" href="#openedge-odbc-configuration">OpenEdge ODBC Configuration</a><ul>
+<li><a class="reference internal" href="#linux-unix-systems">Linux/Unix systems</a></li>
+<li><a class="reference internal" href="#windows">Windows</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#pyodbc-installation">pyodbc installation</a></li>
+<li><a class="reference internal" href="#how-to-validate-the-connexion-with-python">How to validate the connexion with Python</a></li>
+<li><a class="reference internal" href="#django-settings-py-configuration">Django settings.py configuration</a><ul>
+<li><a class="reference internal" href="#mono-database-settings">Mono database settings</a></li>
+<li><a class="reference internal" href="#muti-database-settings">Muti database settings</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#how-to-create-tables-in-the-openedge-database">How to create tables in the OpenEdge database</a></li>
+<li><a class="reference internal" href="#how-to-create-models-from-tables-stored-in-openedge-database">How to create models from tables stored in OpenEdge database</a></li>
+<li><a class="reference internal" href="#how-to-handle-openedge-s-tables-fields-with-extents">How to handle OpenEdge&#8217;s tables fields with extents</a></li>
+<li><a class="reference internal" href="#limitations">Limitations</a></li>
+<li><a class="reference internal" href="#known-issues">Known issues</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../index.html"
+                        title="previous chapter">Welcome to Monasys&#8217;s Modules Documentation</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/pyodbcOpenEdge/pyodbcOPenedge.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="documentation-pyodbcopenedge">
+<h1>Documentation pyodbcOpenEdge<a class="headerlink" href="#documentation-pyodbcopenedge" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
+</div>
+<div class="section" id="indexes-and-tables">
+<h2>Indexes and tables<a class="headerlink" href="#indexes-and-tables" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="../genindex.html"><em>Index</em></a></li>
+<li><a class="reference internal" href="../search.html"><em>Search Page</em></a></li>
+</ul>
+<span class="target" id="module-pyodbcOpenEdge"></span><p>OpenEdge (aka Progress) odbc Django bakend module</p>
+</div>
+<div class="section" id="pyodbcopenedge">
+<span id="pyodbcoe"></span><h2>pyodbcOpenEdge<a class="headerlink" href="#pyodbcopenedge" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="description">
+<h3>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h3>
+<p>This module allows the use of the OpenEdge (Progress) databases in the Django Framework.
+It provides the ability to create tables from Django models, or to access
+existing tables (4GL or SQL) in your Django application.</p>
+<p>It uses the OpenEdge ODBC connexion through <a class="reference external" href="http://code.google.com/p/pyodbc/">pyodbc</a></p>
+<p>The <a class="reference external" href="http://south.aeracode.org/">South</a> integration permits to migrate the database schema.</p>
+</div>
+<div class="section" id="installation">
+<span id="index-1"></span><span id="id1"></span><h3>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h3>
+<p>You can directely use the pip command</p>
+<div class="highlight-pyodbcOpenEdge"><pre>sudo pip install pyodbcOpenEdge</pre>
+</div>
+<p>You cas also download the installer from <a class="reference external" href="https://pypi.python.org/pypi">Pypi</a>.</p>
+<p>Then from the terminal (linux) or cmd (Win) go in the setup directory, and type</p>
+<div class="highlight-pyodbcOpenEdge"><pre>python setup.py install</pre>
+</div>
+</div>
+<div class="section" id="openedge-database-perequisite-and-configuration">
+<span id="opendedge"></span><span id="index-2"></span><h3>OpenEdge database perequisite and configuration<a class="headerlink" href="#openedge-database-perequisite-and-configuration" title="Permalink to this headline">¶</a></h3>
+<dl class="docutils">
+<dt>For OpenEdge these are the minimum requirements :</dt>
+<dd><ul class="first last simple">
+<li>Version 10.2B minimum</li>
+<li>An OpenEdge server must running to allow Django to connect.</li>
+<li>Optionaly, dedicate an OpenEdge SQL server.</li>
+<li>A user with DBA privileges has to be created in the SQL Schema of the OE Database.</li>
+<li>The licence file PGODBC.LIC must be copied from $DLC/odbc into the root directory of the Django App.</li>
+</ul>
+</dd>
+</dl>
+<p>The ODBC connexion is done through Pyodbc (<a class="reference internal" href="#pyodbcinst"><em>see here</em></a> )</p>
+</div>
+<div class="section" id="openedge-odbc-configuration">
+<span id="opendedgeodbc"></span><span id="index-3"></span><h3>OpenEdge ODBC Configuration<a class="headerlink" href="#openedge-odbc-configuration" title="Permalink to this headline">¶</a></h3>
+<p>In order to use pyodbcOpenEdge, you have to setup an odbc connexion.</p>
+<div class="section" id="linux-unix-systems">
+<h4>Linux/Unix systems<a class="headerlink" href="#linux-unix-systems" title="Permalink to this headline">¶</a></h4>
+<p>First, You have to install the unixodbc package.</p>
+<p>Once unixodbc is installed, you have to configure the <em>/etc/odbcinst.ini</em> like that</p>
+<div class="highlight-pyodbcOpenEdge"><pre>[progress]
+Description      = ODBC for Progress
+Driver           = /home/dlc102B/odbc/lib/pgoe1023.so
+Setup            = /home/dlc102B/odbc/lib/pgoe1023.so
+DriverODBCVer    = 3.50
+APILevel         = 1
+ConnectFunctions = YYN
+CPTimeout        = 60
+FileUsage        = 0
+SQLLevel         = 0
+UsageCount       = 1</pre>
+</div>
+<p><em>Diver</em> and <em>Setup</em> are the absolute path name of the odbc libraries shipped with OpenEdge.
+The meaning of the others parameters are discribe <a class="reference external" href="http://media.datadirect.com/download/docs/odbc/allodbc/wwhelp/wwhimpl/js/html/wwhelp.htm#href=userguide/rfi1363233689864.html">here</a></p>
+<p>The <em>/etc/odbc.ini</em> have to be configured like that</p>
+<div class="highlight-pyodbcOpenEdge"><pre>[Django]
+Driver=progress
+Servername=localhost
+Username=django
+Password=django
+Database=mydb
+Port=50000</pre>
+</div>
+<p><em>Driver</em> refers to the <em>[progress]</em> entry in the <em>/etc/odbcinst.ini</em>
+<em>Port</em> refers to the TCP Port used when the db server is run.</p>
+</div>
+<div class="section" id="windows">
+<h4>Windows<a class="headerlink" href="#windows" title="Permalink to this headline">¶</a></h4>
+<p>You first have to install the OpenEdge ODBC driver ( <a class="reference external" href="http://www.sparxsystems.com/enterprise_architect_user_guide/10/projects_and_teams/setupprogressopenedgeodbc.html">see here</a>)</p>
+<p>You have to configure the ODBC connexion (<a class="reference external" href="http://msdn.microsoft.com/en-us/library/ca6axakh(v=vs.80).aspx">see here</a>)</p>
+</div>
+</div>
+<div class="section" id="pyodbc-installation">
+<span id="pyodbcinst"></span><span id="index-4"></span><h3>pyodbc installation<a class="headerlink" href="#pyodbc-installation" title="Permalink to this headline">¶</a></h3>
+<p>On linux systems, the <a class="reference external" href="https://github.com/mkleehammer/pyodbc">pyodbc</a> module have to be modifed in order to work with the OE db.
+So, you have to download the sources and apply the following modification:</p>
+<blockquote>
+<div><ul>
+<li><p class="first">The &#8220;Connection Attribute for Unicode&#8221; have to be modifed (<a class="reference external" href="http://media.datadirect.com/download/docs/odbc/allodbc/wwhelp/wwhimpl/js/html/wwhelp.htm#href=reference/rfi1359986396342.html">see here</a>):</p>
+<div class="highlight-pyodbcOpenEdge"><pre>-        if (SQL_SUCCEEDED(ret))
++
++        if (SQL_SUCCEEDED(ret)) {
++            // TODO: check ODBC driver vendor here
++            if (true) { // DataDirect "application wants UCS-2" option:
++                Py_BEGIN_ALLOW_THREADS
++                ret = SQLSetConnectAttr(hdbc, 1040+21, (SQLPOINTER)1, SQL_IS_INTEGER);
++                Py_END_ALLOW_THREADS
++                if (!SQL_SUCCEEDED(ret))
++                {
++                    RaiseErrorFromHandle("SQLSetConnnectAttr(SQL_ATTR_APP_WCHAR_TYPE)", hdbc, SQL_NULL_HANDLE);
++                    return 0;
++                }
++            }
++
+             return true;
++        }</pre>
+</div>
+</li>
+</ul>
+</div></blockquote>
+<p>Once this modification is done, you have to recompile the pyodbc module.</p>
+<p>On Windows systems, no modifications is required.</p>
+</div>
+<div class="section" id="how-to-validate-the-connexion-with-python">
+<span id="validation"></span><span id="index-5"></span><h3>How to validate the connexion with Python<a class="headerlink" href="#how-to-validate-the-connexion-with-python" title="Permalink to this headline">¶</a></h3>
+<p>Once OpenEdge, ODBC, pyodbc are configured, you can test the ODBC connexion with this sample program</p>
+<div class="highlight-pyodbcOpenEdge"><pre>import pyodbc,
+import datetime,sys,os
+
+def connectOpenedge(driver=None,dsn=None,host=None,db=None,uid=None,pwd=None,port=None):
+    cnxstring=';HOST=%s;DB=%s;UID=%s;PWD=%s;PORT=%s'%(host,db,uid,pwd,port)
+    if driver is not None:
+        cnxstring = 'DRIVER={%s}%s'%(driver,cnxstring)
+    else:
+        cnxstring = 'DSN=%s%s'%(dsn,cnxstring)
+
+    cnxn = pyodbc.connect(cnxstring)
+    cursor=cnxn.cursor()
+
+    try:
+        cursor.execute("SET SCHEMA 'PUB'")
+    except Exception as e:
+        raise pyodbc.DatabaseError(e)
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        print(exc_type, fname, exc_tb.tb_lineno)
+        raise pyodbc.Error
+
+    cnxn.commit()
+
+    r=cursor.execute('SELECT TOP 1 * FROM "mytable" ')
+
+    print cursor.description
+    print r.fetchall()
+
+    return
+
+if __name__ == '__main__':
+   ## DNS connexion
+   connectOpenedge(dsn='django',host='localhost',db='mydb',uid='django',pwd='django',port='50000')
+
+   ## Driver connexion
+   connectOpenedge(driver='django',host='localhost',db='mydb',uid='django',pwd='django',port='50000')</pre>
+</div>
+<p>This program should display the datatype of the mytable&#8217;s fields, and the first row of the table.</p>
+<p>In order to connect to the OE db with ODBC, the file <strong>$DLC/odbc/PGODBC.LIC</strong> must be copied in the current
+directory, otherwise, the following error will raised</p>
+<div class="highlight-pyodbcOpenEdge"><pre>pyodbc.DatabaseError: ('60', '[60] [DataDirect][ODBC 20101 driver]6060 (6060) (SQLExecDirectW)')</pre>
+</div>
+</div>
+<div class="section" id="django-settings-py-configuration">
+<span id="settings-py"></span><span id="index-6"></span><h3>Django settings.py configuration<a class="headerlink" href="#django-settings-py-configuration" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="mono-database-settings">
+<h4>Mono database settings<a class="headerlink" href="#mono-database-settings" title="Permalink to this headline">¶</a></h4>
+<p>Sample configuration</p>
+<div class="highlight-pyodbcOpenEdge"><pre>DBENGINE='OpenEdge.pyodbc' ## Progress
+DBNAME='mydb'
+DBUSER='django'
+DBPASSWORD='password'
+DBHOST='localhost'
+DBPORT='50000'
+TYPECNX={'DSN':'mydb'}
+DEFAULTSCHEMA = 'PUB'
+CPINTERNAL='cp1252'
+
+DATABASES = {
+    'default': {
+        'ENGINE': DBENGINE,
+        'NAME': DBNAME,
+        'TYPECNX' : TYPECNX,
+        'DEFAULTSCHEMA' : DEFAULTSCHEMA,
+        'USER': DBUSER,
+        'PASSWORD': DBPASSWORD,
+        'HOST': DBHOST,
+        'PORT': DBPORT,
+        'CPINTERNAL' : CPINTERNAL,
+    }
+}
+#===============================================================================
+# South support
+#===============================================================================
+SOUTH_DATABASE_ADAPTERS = {'default':'OpenEdge.south.OpenEdge'}</pre>
+</div>
+<p><strong>TYPECNX</strong> can be DSN or DRIVER.
+If DNS is used, then both <em>/etc/odbc.ini</em> and <em>/etc/odbcinst.ini</em> have to be configured, and
+the value given is the entry in the <em>/etc/odbc.ini</em> file.
+If <em>DRIVER</em> is use, only the <em>/etc/odbcinst.ini</em> have to be configured, and
+the value given is the entry in the <em>/etc/odbcinst.ini</em> file.</p>
+<p><strong>On windows, ONLY DRIVER can be used, The driver name is taken from the registry HKEY_LOCAL_MACHINE/SOFTWARE/ODBC/ODBCINST.INI Driver Subkey</strong></p>
+<p><strong>DEFAULTSCHEMA</strong> is used to perform queries without prefixing the tables name with schema name.</p>
+<p><strong>CPINTERNAL</strong> This is the database codepage used by OpenEdge, default value is iso8859-1.
+Change this value if you have accentued characters issues.</p>
+</div>
+<div class="section" id="muti-database-settings">
+<h4>Muti database settings<a class="headerlink" href="#muti-database-settings" title="Permalink to this headline">¶</a></h4>
+<p>In order to use multi database in Django , <a class="reference external" href="https://docs.djangoproject.com/en/1.5/topics/db/multi-db/">see this documentation</a>.</p>
+<p>Below, an example of confgiuration with One Postgres Db and One OpenEdge Db.
+The default Db is Postgres</p>
+<div class="highlight-pyodbcOpenEdge"><pre>######### OpenEdge Db Conf ##############
+DBENGINEOE='OpenEdge.pyodbc' ## Progress
+DBNAMEOE='thetwo'
+DBUSEROE='django'
+DBPASSWORDOE='django'
+DBHOSTOE='localhost'
+DBPORTOE='50000'
+TYPECNX={'DSN':'django'}
+DEFAULTSCHEMA = 'PUB'
+CPINTERNAL='cp1252'
+
+######### Postgres Db Conf ##############
+DBENGINE='django.db.backends.postgresql_psycopg2'
+DBNAME='theone'
+DBUSER='smith'
+DBPASSWORD='smith'
+DBHOST='localhost'
+DBPORT=''
+
+######### Db's config #####################
+DATABASES = {
+    'default': {
+        'ENGINE': DBENGINE, # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+        'NAME': DBNAME,                      # Or path to database file if using sqlite3.
+        'TYPECNX' : TYPECNX,
+        'DEFAULTSCHEMA' : DEFAULTSCHEMA,                 #Default OpenEdge Schema
+        'USER': DBUSER,                      # Not used with sqlite3.
+        'PASSWORD': DBPASSWORD,                  # Not used with sqlite3.
+        'HOST': DBHOST,                      # Set to empty string for localhost. Not used with sqlite3.
+        'PORT': DBPORT,                      # Set to empty string for default. Not used with sqlite3.
+    },
+    'openedge': {
+        'ENGINE': DBENGINEOE, # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+        'NAME': DBNAMEOE,                      # Or path to database file if using sqlite3.
+        'TYPECNX' : TYPECNX,
+        'DEFAULTSCHEMA' : DEFAULTSCHEMA,                 #Default OpenEdge Schema
+        'USER': DBUSEROE,                      # Not used with sqlite3.
+        'PASSWORD': DBPASSWORDOE,                  # Not used with sqlite3.
+        'HOST': DBHOSTOE,                      # Set to empty string for localhost. Not used with sqlite3.
+        'PORT': DBPORTOE,                      # Set to empty string for default. Not used with sqlite3.
+        'CPINTERNAL' : CPINTERNAL,             # Internal db codepage
+    }
+}
+
+#### Db's routing
+DATABASE_ROUTERS = ['routers.OeRouter']</pre>
+</div>
+<p>Sample router configuration</p>
+<div class="highlight-pyodbcOpenEdge"><pre>__init__.py
+   from defrouters import OeRouter
+
+defrouters.py
+   class OeRouter(object):
+       """
+       A router to control all database operations on models in the
+       oeapp application.
+       """
+       def db_for_read(self, model, **hints):
+           """
+           Attempts to read oeapp models go to openedge.
+           """
+           if model._meta.app_label == 'oeapp':
+               return 'openedge'
+           return None
+
+       def db_for_write(self, model, **hints):
+           """
+           Attempts to write oeapp models go to openedge.
+           """
+           if model._meta.app_label == 'oeapp':
+               return 'openedge'
+           return None</pre>
+</div>
+<p>Sample OpenEdge model configuration</p>
+<div class="highlight-pyodbcOpenEdge"><pre>from django.db import models
+from OpenEdge.OEmodels.OpenEdgeExtentField import OpenEdgeExtentField
+
+class Mytable(models.Model):
+    name = models.CharField(max_length=60, blank=True,primary_key=True)
+    chartab = OpenEdgeExtentField(max_length=8, blank=True,OEextents=5,OEtype='char',verbose_name='fieldext')
+
+    class Meta:
+        db_table = 'myTable'
+        app_label = 'oeapp'</pre>
+</div>
+<p>In the above sample, chartab is a custom field which is able to handle OenEdge fields with extents (<a class="reference internal" href="#extents"><em>details here</em></a> ).</p>
+<dl class="docutils">
+<dt>The <strong>class Meta</strong> is used to route the queries to the OpenEdge Db through the database router ::</dt>
+<dd>db_table contains the name of the table in the OpenEdge Db.
+app_label is used by the router to deal with the correct Db.</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="how-to-create-tables-in-the-openedge-database">
+<span id="create-tables"></span><span id="index-7"></span><h3>How to create tables in the OpenEdge database<a class="headerlink" href="#how-to-create-tables-in-the-openedge-database" title="Permalink to this headline">¶</a></h3>
+<p>There is no particularity, tables are automaticaly created by Django from models.</p>
+<p>Model example</p>
+<div class="highlight-pyodbcOpenEdge"><pre>class MasterTable(models.Model):
+    name = models.CharField(max_length=60, blank=True)
+    adress = models.DecimalField(null=True, max_digits=7, decimal_places=2, default=0.0)
+
+class Slave1(models.Model):
+    car = models.CharField(max_length=60, blank=True)
+    master = models.ManyToManyField(MasterTable)
+
+class Slave2(models.Model):
+    boat = models.CharField(max_length=60, blank=True)
+    master = models.ForeignKey(MasterTable)</pre>
+</div>
+</div>
+<div class="section" id="how-to-create-models-from-tables-stored-in-openedge-database">
+<span id="models-from-opendegde"></span><span id="index-8"></span><h3>How to create models from tables stored in OpenEdge database<a class="headerlink" href="#how-to-create-models-from-tables-stored-in-openedge-database" title="Permalink to this headline">¶</a></h3>
+<p><em>This section describes how to generate Django Models from existing tables.</em></p>
+<p>Use the <strong>manage.py inspectdb</strong> command to get the tables definitions to be generated as Django&#8217;s models</p>
+<div class="highlight-pyodbcOpenEdge"><pre>python manage.py inspectdb &gt; OEmodels.py</pre>
+</div>
+<p>This step has to be done against a settings.py file, which must contains only the OpenEdge database definition.</p>
+<p>The OEmodels.py file must be customized to handle only the desired tables and fields, and to configure the fields with extent (<a class="reference internal" href="#extents"><em>details here</em></a> ).</p>
+<p>The generated file look like this</p>
+<div class="highlight-pyodbcOpenEdge"><pre>class Alltype(models.Model):
+    chartype = models.CharField(max_length=16, blank=True)
+    inttype = models.IntegerField(null=True, blank=True)
+    dectype = models.DecimalField(null=True, max_digits=17, decimal_places=2, blank=True)
+    datetype = models.DateField(null=True, blank=True)
+    logtype = models.BooleanField(null=True, blank=True)
+    blobtype = models.TextField(blank=True) # This field type is a guess.
+    int64type = models.BigIntegerField(null=True, blank=True)
+    rawtype = models.TextField(blank=True) # This field type is a guess.
+    clobtype = models.CharField(max_length=4194304, blank=True)
+    detetimetype = models.DateTimeField(null=True, blank=True)
+    datetimetztype = models.CharField(max_length=32, blank=True)
+    class Meta:
+        db_table = 'alltype</pre>
+</div>
+<p>The comment <strong># This field type is a guess.</strong> means that the original type is not handle by the Django Backend,
+and that a generic type is used.</p>
+<p><strong>If no column ID with primary unique key property exists in the table, you have to define a column with the primary_key=True property
+in order to be able to query this table in then Django admin app .</strong> (<a class="reference internal" href="#limitations"><em>see limitations</em></a> )</p>
+<div class="highlight-pyodbcOpenEdge"><pre>name = models.CharField(max_length=60, blank=True,primary_key=True)</pre>
+</div>
+</div>
+<div class="section" id="how-to-handle-openedge-s-tables-fields-with-extents">
+<span id="extents"></span><span id="index-9"></span><h3>How to handle OpenEdge&#8217;s tables fields with extents<a class="headerlink" href="#how-to-handle-openedge-s-tables-fields-with-extents" title="Permalink to this headline">¶</a></h3>
+<p>When the ODBC driver reads a table which contains a field with extents,
+the values are handled like a characters string where each extent is separated by a semi-colon (;).</p>
+<p>Even if the field&#8217;s type is integer or decimal, the values will be returned as a characters string.</p>
+<p>To handle this behavior, you can use the custom field <strong>OpenEdgeExtentField</strong> shipped with the pyodbcOpenEdge backend.</p>
+<p>To use it, you have to import the module inthe models.py</p>
+<div class="highlight-pyodbcOpenEdge"><pre>from OpenEdge.OEmodels.OpenEdgeExtentField import OpenEdgeExtentField</pre>
+</div>
+<p>Then, in your Django model, you can define an extent field as below</p>
+<div class="highlight-pyodbcOpenEdge"><pre>fieldext = OpenEdgeExtentField(max_length=8, blank=True,OEextents=5,OEtype='char',verbose_name='fieldext')</pre>
+</div>
+<p>The <strong>OEextents</strong> represents the number of extent for this field in the OpenEdge Db.</p>
+<p>The <strong>OEtype</strong> represents the original type in OpenEdge</p>
+<p>When the model is used, the field will be rendered as a python list, made of <strong>OEextents</strong> elements.</p>
+<p>Each elements will be of a python type as close as posible than the original one.</p>
+<p>The following table gives the equivalences OpenEdge - Python</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="44%" />
+<col width="56%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">OpenEdge Type</th>
+<th class="head">Python type</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>char</td>
+<td>str</td>
+</tr>
+<tr class="row-odd"><td>int</td>
+<td>int</td>
+</tr>
+<tr class="row-even"><td>log</td>
+<td>bool</td>
+</tr>
+<tr class="row-odd"><td>dec</td>
+<td>decimal.Decimal</td>
+</tr>
+<tr class="row-even"><td>int64</td>
+<td>long</td>
+</tr>
+<tr class="row-odd"><td>datetime</td>
+<td>datetime.datetime</td>
+</tr>
+<tr class="row-even"><td>date</td>
+<td>datetime.date</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="limitations">
+<span id="index-10"></span><span id="id5"></span><h3>Limitations<a class="headerlink" href="#limitations" title="Permalink to this headline">¶</a></h3>
+<p>To be able to use the Django admin app against the OpenEdge tables, the models used must have a primary unique key column.</p>
+<p>Django does not support the multicolumns primary key, so, if the primary unique key for an OpenEgde table is of this type,
+you will not be able to handle this tables in the admin app.</p>
+<p>If a column contains data which overflow the column width , then, the ODBC Driver will raise an error</p>
+<div class="highlight-pyodbcOpenEdge"><pre>pyodbc.Error: ('60', '[60] [DataDirect][ODBC 20101 driver][20101]Column mycolumn in table PUB.mytable has value exceeding its max length or precision. (-210012) (SQLFetch)')</pre>
+</div>
+<p>To control your db, you can use the $DLC/bin/dbtool, menu 1.
+This will let you know and then fix the columns which overflows.</p>
+</div>
+<div class="section" id="known-issues">
+<span id="issues"></span><span id="index-11"></span><h3>Known issues<a class="headerlink" href="#known-issues" title="Permalink to this headline">¶</a></h3>
+<p>The reading of a field DATETIME-TZ in a 4GL table through the SQL driver causes an error</p>
+<div class="highlight-pyodbcOpenEdge"><pre>/home/smith/dlc102B/bin/_sqlsrv2: free(): invalid next size (fast)</pre>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="Welcome to Monasys’s Modules Documentation"
+             >previous</a> |</li>
+        <li><a href="../index.html">pyodbcOpenEdgeDoc beta documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, J-Y Priou Monasysinfo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+  </body>
+</html>
