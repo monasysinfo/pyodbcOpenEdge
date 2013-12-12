@@ -67,8 +67,8 @@ Then from the terminal (linux) or cmd (Win) go in the setup directory, and type 
 .. index:: OpendEdge
 .. _OpendEdge:
 
-OpenEdge database perequisite and configuration
-===============================================
+OpenEdge database prerequisites and configuration
+=================================================
 
 For OpenEdge these are the minimum requirements :
    * Version 10.2B minimum
